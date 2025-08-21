@@ -1,0 +1,7 @@
+.DS_Store
+assets/
+node_modules/
+dist/
+.env
+*.log
+Database.xlsx
