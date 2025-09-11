@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Belonging Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon"
+        href="https://betfairprod.sharepoint.com/:i:/r/sites/IM-learningblip/Shared%20Documents/5.%20Local%20Projects/9.%20DEI/Belonging%20Hub/website/assets/img/favicon.png?csf=1&web=1" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Poppins", "Segoe UI", sans-serif;
+            color: #333F48;
+            background: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            padding: 50px 100px;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .navbar {
+            width: 100%;
+            color: #333F48;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar>div {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .navbar .navbar-brand {
+            padding-right: 2rem;
+        }
+
+        .navbar .navbar-link {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        main {
+            width: 100%;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <div class="navbar-left">
+            <a class="navbar-brand" href="#" onclick="showMain('home')">
+                <img src="assets/img/logo.png" alt="Logo" height="50">
+            </a>
+        </div>
+        <div class="navbar-right">
+            <a class="navbar-link" href="#" onclick="showMain('journey')">Your Journey</a>
+            <a class="navbar-link" href="#" onclick="showMain('principles')">Belonging Principles</a>
+        </div>
+    </div>
+
+    <main id="home">
+        <h1>Welcome to the Belonging Hub</h1>
+        <p>This is your space to learn, reflect, and take action toward building a more inclusive workplace where
+            everyone feels
+            seen, valued, and empowered to thrive. Let’s grow together.</p>
+    </main>
+    <main id="journey" style="display:none;">
+        <h1>Your Journey</h1>
+        <p>Content for Your Journey.</p>
+    </main>
+    <main id="principles" style="display:none;">
+        <h1>Belonging Principles</h1>
+        <p>Content for Belonging Principles.</p>
+    </main>
+
+    <script>
+        function showMain(id) {
+            document.getElementById('home').style.display = 'none';
+            document.getElementById('journey').style.display = 'none';
+            document.getElementById('principles').style.display = 'none';
+            document.getElementById(id).style.display = 'flex';
+        }
+    </script>
+</body>
+
+</html>
