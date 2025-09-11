@@ -1,69 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
     <title>Belonging Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/x-icon"
-        href="https://betfairprod.sharepoint.com/:i:/r/sites/IM-learningblip/Shared%20Documents/5.%20Local%20Projects/9.%20DEI/Belonging%20Hub/website/assets/img/favicon.png?csf=1&web=1" />
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: "Poppins", "Segoe UI", sans-serif;
-            color: #333F48;
-            background: #fff;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2rem;
-            padding: 50px 100px;
-        }
-
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .navbar {
-            width: 100%;
-            color: #333F48;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .navbar>div {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .navbar .navbar-brand {
-            padding-right: 2rem;
-        }
-
-        .navbar .navbar-link {
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        main {
-            width: 100%;
-            height: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
@@ -74,16 +16,43 @@
             </a>
         </div>
         <div class="navbar-right">
-            <a class="navbar-link" href="#" onclick="showMain('journey')">Your Journey</a>
-            <a class="navbar-link" href="#" onclick="showMain('principles')">Belonging Principles</a>
+            <a class="navbar-link navbar-journey" href="#" onclick="showMain('journey')">Your Journey</a>
+            <a class="navbar-link navbar-principles" href="#" onclick="showMain('principles')">Belonging Principles</a>
         </div>
     </div>
 
     <main id="home">
-        <h1>Welcome to the Belonging Hub</h1>
-        <p>This is your space to learn, reflect, and take action toward building a more inclusive workplace where
-            everyone feels
-            seen, valued, and empowered to thrive. Let’s grow together.</p>
+        <div class="hero-container">
+            <div class="hero-video">
+                <video autoplay loop muted>
+                    <source src="assets/video/sample.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <div class="hero-overlay">
+                <img src="assets/img/hero-background.png" alt="Overlay">
+            </div>
+            <div class="hero-content">
+                <div class="hero-left">
+                    <span class="hero-subtitle">Welcome to the</span>
+                    <span class="hero-title">Belonging Hub</span>
+                    <span class="hero-description">This is your space to learn, reflect, and take action toward building
+                        a
+                        more inclusive workplace where everyone feels
+                        seen, valued, and empowered to thrive. <span style="font-weight: 500;">Let’s grow
+                            together.</span></span>
+                    <div class="hero-controls">
+                        <button id="playPauseBtn" aria-label="Pause">
+                            <span id="playPauseIcon"></span>
+                        </button>
+                        <button id="muteBtn" aria-label="Unmute">
+                            <span id="muteIcon"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="hero-right"></div>
+            </div>
+        </div>
     </main>
     <main id="journey" style="display:none;">
         <h1>Your Journey</h1>
@@ -101,6 +70,65 @@
             document.getElementById('principles').style.display = 'none';
             document.getElementById(id).style.display = 'flex';
         }
+
+        // SVG placeholders
+        const pauseSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M18.535 4.766c.73.27 1.215.965 1.215 1.743V17.49c0 .778-.485 1.474-1.215 1.743a4.44 4.44 0 0 1-3.07 0a1.86 1.86 0 0 1-1.215-1.743V6.51c0-.778.485-1.474 1.215-1.743a4.44 4.44 0 0 1 3.07 0M18.25 6.51a.36.36 0 0 0-.234-.335a2.94 2.94 0 0 0-2.032 0a.36.36 0 0 0-.234.335v10.98c0 .15.093.284.234.335a2.94 2.94 0 0 0 2.032 0a.36.36 0 0 0 .234-.335zM8.535 4.766c.73.27 1.215.965 1.215 1.743V17.49c0 .778-.485 1.474-1.215 1.743a4.44 4.44 0 0 1-3.07 0A1.86 1.86 0 0 1 4.25 17.49V6.51c0-.778.485-1.474 1.215-1.743a4.44 4.44 0 0 1 3.07 0M8.25 6.51a.36.36 0 0 0-.234-.335a2.94 2.94 0 0 0-2.032 0a.36.36 0 0 0-.234.335v10.98c0 .15.093.284.234.335a2.94 2.94 0 0 0 2.032 0a.36.36 0 0 0 .234-.335z" clip-rule="evenodd"/></svg>`;
+        const playSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16.394 12L10 7.737v8.526zm2.982.416L8.777 19.482A.5.5 0 0 1 8 19.066V4.934a.5.5 0 0 1 .777-.416l10.599 7.066a.5.5 0 0 1 0 .832"/></svg>`;
+        const unmuteSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3.75v16.5a.75.75 0 0 1-1.255.555L5.46 16H2.75A1.75 1.75 0 0 1 1 14.25v-4.5C1 8.784 1.784 8 2.75 8h2.71l5.285-4.805A.75.75 0 0 1 12 3.75M6.255 9.305a.75.75 0 0 1-.505.195h-3a.25.25 0 0 0-.25.25v4.5c0 .138.112.25.25.25h3c.187 0 .367.069.505.195l4.245 3.86V5.445ZM16.28 8.22a.75.75 0 1 0-1.06 1.06L17.94 12l-2.72 2.72a.75.75 0 1 0 1.06 1.06L19 13.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L20.06 12l2.72-2.72a.75.75 0 0 0-1.06-1.06L19 10.94z"/></svg>`;
+        const muteSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M11.553 3.064A.75.75 0 0 1 12 3.75v16.5a.75.75 0 0 1-1.255.555L5.46 16H2.75A1.75 1.75 0 0 1 1 14.25v-4.5C1 8.784 1.784 8 2.75 8h2.71l5.285-4.805a.75.75 0 0 1 .808-.13ZM10.5 5.445l-4.245 3.86a.75.75 0 0 1-.505.195h-3a.25.25 0 0 0-.25.25v4.5c0 .138.112.25.25.25h3c.187 0 .367.069.505.195l4.245 3.86Zm8.218-1.223a.75.75 0 0 1 1.06 0c4.296 4.296 4.296 11.26 0 15.556a.75.75 0 0 1-1.06-1.06a9.5 9.5 0 0 0 0-13.436a.75.75 0 0 1 0-1.06"/><path fill="currentColor" d="M16.243 7.757a.75.75 0 1 0-1.061 1.061a4.5 4.5 0 0 1 0 6.364a.75.75 0 0 0 1.06 1.06a6 6 0 0 0 0-8.485Z"/></svg>`;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const video = document.querySelector('.hero-video video');
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const muteBtn = document.getElementById('muteBtn');
+            const playPauseIcon = document.getElementById('playPauseIcon');
+            const muteIcon = document.getElementById('muteIcon');
+
+            // Helper functions
+            function setPlayPauseIcon() {
+                if (video.paused) {
+                    playPauseIcon.innerHTML = playSVG;
+                    playPauseBtn.setAttribute('aria-label', 'Play');
+                } else {
+                    playPauseIcon.innerHTML = pauseSVG;
+                    playPauseBtn.setAttribute('aria-label', 'Pause');
+                }
+            }
+
+            function setMuteIcon() {
+                if (video.muted) {
+                    muteIcon.innerHTML = unmuteSVG;
+                    muteBtn.setAttribute('aria-label', 'Unmute');
+                } else {
+                    muteIcon.innerHTML = muteSVG;
+                    muteBtn.setAttribute('aria-label', 'Mute');
+                }
+            }
+
+            // Button click handlers
+            playPauseBtn.addEventListener('click', function () {
+                if (video.paused) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+                setPlayPauseIcon();
+            });
+
+            muteBtn.addEventListener('click', function () {
+                video.muted = !video.muted;
+                setMuteIcon();
+            });
+
+            // Listen for video state changes
+            video.addEventListener('play', setPlayPauseIcon);
+            video.addEventListener('pause', setPlayPauseIcon);
+            video.addEventListener('volumechange', setMuteIcon);
+
+            // Initial setup
+            setPlayPauseIcon();
+            setMuteIcon();
+        });
     </script>
 </body>
 
