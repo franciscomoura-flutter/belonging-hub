@@ -182,17 +182,17 @@ main {
     border: 2px solid rgba(0, 0, 0, 0.6);
 }
 
+.section-title {
+    font-size: 1.7rem;
+    font-weight: 600;
+}
+
 .section-explore {
     margin-top: 2.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
     margin-bottom: 2rem;
-}
-
-.section-explore-title {
-    font-size: 1.7rem;
-    font-weight: 600;
 }
 
 .section-explore-cards {
@@ -375,4 +375,57 @@ main {
     font-size: 1.7rem;
     font-weight: 500;
     z-index: 3;
+}
+
+.app-loader {
+    position: fixed;
+    inset: 0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    justify-content: flex-start;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: .5px;
+    z-index: 9999;
+    transition: opacity .4s ease;
+    padding-top: 3rem;
+}
+
+.app-loader .spinner {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 6px solid #e4e6e8;
+    border-top-color: #009CDE;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+html.app-loaded .app-loader {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.back-home-btn {
+    color: #333F48;
+    cursor: pointer;
+}
+
+.back-home-btn:hover {
+    opacity: 0.7;
+}
+
+.principles-header {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
