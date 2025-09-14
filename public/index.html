@@ -108,34 +108,30 @@
 
         <div id="principlesPlaylist" class="video-playlist" data-playlist>
             <div class="playlist-source">
-                <article id="principle-1" data-src="assets/video/sample.mp4"
-                    data-poster="assets/img/hero-background.png">
-                    <h4>1. Why Inclusion & Belonging Matter</h4>
+                <article id="principle-1" data-src="assets/video/sample.mp4">
+                    <h4>1 | Why Inclusion & Belonging Matter</h4>
                     <p class="short">For All of Us</p>
                     <p class="description">
                         Set the foundation by showing how inclusion is essential to everyone—not just underrepresented
                         groups.
                     </p>
                 </article>
-                <article id="principle-2" data-src="assets/video/sample.mp4"
-                    data-poster="assets/img/Belonging at Blip Photo 10.jpg">
-                    <h4>2. Understanding Psychological Safety and Empathy</h4>
+                <article id="principle-2" data-src="assets/video/sample.mp4">
+                    <h4>2 | Understanding Psychological Safety and Empathy</h4>
                     <p class="short">Foster a Safe Environment</p>
                     <p class="description">
                         Introduce psychological safety as the emotional foundation for belonging.​
                     </p>
                 </article>
-                <article id="principle-3" data-src="assets/video/sample.mp4"
-                    data-poster="assets/img/Belonging at Blip Photo 13.jpg">
-                    <h4>3. Mythbusting DEI: What it is VS What it’s not</h4>
+                <article id="principle-3" data-src="assets/video/sample.mp4">
+                    <h4>3 | Mythbusting DEI: What it is VS What it’s not</h4>
                     <p class="short">Addressing Misunderstandings</p>
                     <p class="description">
                         Address common misunderstandings about diversity, equity, and inclusion.
                     </p>
                 </article>
-                <article id="principle-4" data-src="assets/video/sample.mp4"
-                    data-poster="assets/img/Belonging at Blip Photo 14.jpg">
-                    <h4>4. Allyship in Action</h4>
+                <article id="principle-4" data-src="assets/video/sample.mp4">
+                    <h4>4 | Allyship in Action</h4>
                     <p class="short">Understanding Allyship</p>
                     <p class="description">
                         Show what real allyship looks like and how everyone can practice it.​
@@ -386,8 +382,7 @@
                     title,
                     short,
                     description,
-                    src: art.dataset.src,
-                    poster: art.dataset.poster || ''
+                    src: art.dataset.src
                 };
             });
 
@@ -430,9 +425,11 @@
                     li.setAttribute('role', 'option');
                     li.setAttribute('aria-selected', idx === state.currentIndex ? 'true' : 'false');
                     li.dataset.index = String(idx);
+                    // Transparent 1x1 gif as placeholder
+                    const blank = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
                     li.innerHTML = `
-                        <div class="playlist-thumb">
-                            <img loading="lazy" src="${item.poster || 'assets/img/hero-background.png'}" alt="${item.title}">
+                        <div class="playlist-thumb loading">
+                            <img loading="lazy" src="${blank}" data-video-thumb="${item.src}" alt="${item.title}">
                         </div>
                         <div class="playlist-meta">
                             <div class="playlist-meta-title">${item.title}</div>
@@ -443,6 +440,7 @@
                     li.addEventListener('click', () => selectIndex(idx, true));
                     listEl.appendChild(li);
                 });
+                generateThumbnails(listEl);
             }
 
             function updateActive() {
@@ -457,7 +455,6 @@
                 const item = state.items[state.currentIndex];
                 if (!item) return;
                 if (videoEl.src !== item.src) videoEl.src = item.src;
-                if (item.poster) videoEl.poster = item.poster;
                 titleEl.textContent = item.title;
                 descEl.textContent = item.description || '';
                 updateActive();
@@ -475,6 +472,76 @@
 
             renderList();
             loadCurrent(options.autoplayFirst === true);
+
+            // Thumbnail generation from video first frame
+            function generateThumbnails(container) {
+                const imgNodes = [...container.querySelectorAll('img[data-video-thumb]')];
+                imgNodes.forEach(img => {
+                    const src = img.getAttribute('data-video-thumb');
+                    if (!src) return;
+
+                    const thumbWrapper = img.closest('.playlist-thumb');
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.src = src;
+
+                    let done = false;
+                    const timeout = setTimeout(cleanup, 4000);
+
+                    video.addEventListener('loadeddata', () => {
+                        // Try seeking a tiny bit to avoid blank first frame (if possible)
+                        try {
+                            if (video.readyState >= 2) {
+                                video.currentTime = Math.min(0.15, (video.duration || 1) * 0.02);
+                            }
+                        } catch { /* ignore */ }
+                    });
+
+                    video.addEventListener('seeked', capture);
+                    video.addEventListener('error', cleanup);
+
+                    function capture() {
+                        if (done) return;
+                        done = true;
+                        clearTimeout(timeout);
+                        try {
+                            const w = 160;
+                            const h = 94;
+                            const canvas = document.createElement('canvas');
+                            canvas.width = w;
+                            canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            const vw = video.videoWidth || 1280;
+                            const vh = video.videoHeight || 720;
+                            // Cover fit
+                            const scale = Math.max(w / vw, h / vh);
+                            const dw = vw * scale;
+                            const dh = vh * scale;
+                            const dx = (w - dw) / 2;
+                            const dy = (h - dh) / 2;
+                            ctx.drawImage(video, dx, dy, dw, dh);
+                            img.src = canvas.toDataURL('image/jpeg', 0.7);
+                        } catch {
+                            // Fallback color block already there
+                        }
+                        finalize();
+                    }
+
+                    function cleanup() {
+                        if (done) return finalize();
+                        done = true;
+                        clearTimeout(timeout);
+                        finalize();
+                    }
+
+                    function finalize() {
+                        video.remove();
+                        if (thumbWrapper) thumbWrapper.classList.remove('loading');
+                    }
+                });
+            }
         }
 
         (function () {

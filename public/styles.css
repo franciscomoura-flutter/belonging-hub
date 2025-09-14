@@ -451,7 +451,6 @@ html.app-loaded .app-loader {
     background: #000;
     object-fit: cover;
     display: block;
-    border: 2px solid #9063CD;
 }
 
 .video-playlist-info {
