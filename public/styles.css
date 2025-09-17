@@ -423,6 +423,13 @@ html.app-loaded .app-loader {
     opacity: 0.7;
 }
 
+.journey-header {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
 .principles-header {
     margin-top: 2rem;
     display: flex;
