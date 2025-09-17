@@ -217,8 +217,79 @@ document.addEventListener('DOMContentLoaded', function () {
             exploreVideo.currentTime = 0;
             leavePlayingState();
         });
+
+        // Initialize Journey tabs
+        initJourneyTabs();
     }
 });
+
+// Simple tabs for Journey page
+function initJourneyTabs() {
+    const journey = document.getElementById('journey');
+    if (!journey) return;
+
+    const tablist = journey.querySelector('#journeyTabs');
+    if (!tablist) return;
+
+    const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+    const panels = Array.from(journey.querySelectorAll('.tab-panel'));
+
+    function activate(index, focusPanel = false) {
+        tabs.forEach((t, i) => {
+            const selected = i === index;
+            t.classList.toggle('active', selected);
+            t.setAttribute('aria-selected', selected ? 'true' : 'false');
+            t.tabIndex = selected ? 0 : -1;
+        });
+
+        panels.forEach((p, i) => {
+            const show = i === index;
+            p.classList.toggle('active', show);
+            if (!show) {
+                // Pause any media inside hidden panel
+                p.querySelectorAll('video,audio').forEach(m => { try { m.pause(); } catch { } });
+            }
+        });
+
+        if (focusPanel) panels[index]?.focus();
+
+        // Resize message for embedding
+        try {
+            parent.postMessage({ type: 'bh-resize', height: document.documentElement.scrollHeight }, '*');
+        } catch { }
+    }
+
+    tablist.addEventListener('click', (e) => {
+        const btn = e.target.closest('[role="tab"]');
+        if (!btn) return;
+        const idx = tabs.indexOf(btn);
+        if (idx >= 0) activate(idx, false);
+    });
+
+    tablist.addEventListener('keydown', (e) => {
+        const current = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+        if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) e.preventDefault();
+        if (e.key === 'ArrowRight') {
+            const next = (current + 1) % tabs.length;
+            tabs[next].focus();
+            activate(next, false);
+        } else if (e.key === 'ArrowLeft') {
+            const prev = (current - 1 + tabs.length) % tabs.length;
+            tabs[prev].focus();
+            activate(prev, false);
+        } else if (e.key === 'Home') {
+            tabs[0].focus();
+            activate(0, false);
+        } else if (e.key === 'End') {
+            tabs[tabs.length - 1].focus();
+            activate(tabs.length - 1, false);
+        }
+    });
+
+    // Ensure initial state reflects markup
+    const initial = Math.max(0, tabs.findIndex(t => t.classList.contains('active')));
+    activate(initial, false);
+}
 
 function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     if (!root || root.dataset.enhanced === 'true') return;

@@ -70,7 +70,6 @@ main {
     height: auto;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
 }
 
 .hero-container {
@@ -184,6 +183,11 @@ main {
 
 .section-title {
     font-size: 1.7rem;
+    font-weight: 600;
+}
+
+.section-subtitle {
+    font-size: 1.2rem;
     font-weight: 600;
 }
 
@@ -441,7 +445,7 @@ html.app-loaded .app-loader {
     width: 100%;
     display: flex;
     gap: 2rem;
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     align-items: flex-start;
 }
 
@@ -597,6 +601,53 @@ html.app-loaded .app-loader {
 
 .video-playlist[data-enhanced="true"] .playlist-source {
     display: none !important;
+}
+
+.tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 2.5rem;
+    border-radius: 3rem;
+    padding: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    justify-content: center;
+    align-items: center;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: .7rem 1rem;
+    background: #fff;
+    color: #009CDE;
+    border-radius: 3rem;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.6s ease;
+}
+
+.tab:hover {
+    background: #009CDE1A;
+}
+
+.tab.active {
+    background-color: #009CDE;
+    color: #fff;
+    font-weight: 500;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
 }
 
 @media (max-width: 1050px) {
