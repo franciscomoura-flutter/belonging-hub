@@ -227,14 +227,14 @@ const JOURNEY_RESOURCES = [
     {
         title: "Unlocking Belonging at Blip",
         description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        url: "https://example.com",
+        url: "https://ilearnppb.com/course/view.php?id=18282",
         category: "iLearn",
         role: "everyone"
     },
     {
         title: "Trailliant Self-paced Training",
         description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        url: "https://example.com",
+        url: "https://wd3.myworkday.com/flutterbe/d/home.htmld",
         category: "FlutterBe",
         role: "everyone"
     },
@@ -262,7 +262,7 @@ const JOURNEY_RESOURCES = [
     {
         title: "Why DEI Still Matters (and How to Get It Right)",
         description: "A tested approach to DEI that creates lasting change.",
-        url: "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/why-diversity-matters",
+        url: "https://hbr.org/podcast/2024/11/why-dei-still-matters-and-how-to-get-it-right",
         category: "HBR",
         role: "everyone"
     },
