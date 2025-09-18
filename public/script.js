@@ -223,6 +223,213 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+const JOURNEY_RESOURCES = [
+    {
+        title: 'Diversity And Inclusion In The Workplace',
+        description: 'Fostering Diversity & Inclusion, Mitigating Unconscious Bias, and Advancing Global Cultural Competence',
+        url: 'https://ppb.udemy.com/course/diversity-and-inclusion-b/',
+        category: 'Udemy',
+        role: 'everyone'
+    },
+    {
+        title: 'Inclusive Communication Essentials',
+        description: 'Practical habits to ensure your daily communication supports inclusion.',
+        url: 'https://ppb.udemy.com/course/inclusive-communication/',
+        category: 'Udemy',
+        role: 'everyone'
+    },
+    {
+        title: 'Creating Psychological Safety',
+        description: 'How teams unlock performance through trust and openness.',
+        url: 'https://hbr.org/psychological-safety-guide',
+        category: 'HBR',
+        role: 'everyone'
+    },
+    {
+        title: 'Everyday Allyship Practices',
+        description: 'Concrete micro‑behaviours that scale belonging.',
+        url: 'https://hbr.org/everyday-allyship',
+        category: 'HBR',
+        role: 'everyone'
+    },
+    {
+        title: 'Understanding Unconscious Bias',
+        description: 'Recognize patterns and mitigate biased decision making.',
+        url: 'https://hbr.org/unconscious-bias',
+        category: 'HBR',
+        role: 'everyone'
+    },
+    {
+        title: 'Inclusive Culture @ FlutterBe',
+        description: 'Internal playbook for shared behaviours and rituals.',
+        url: 'https://intranet.flutterbe.local/inclusive-culture',
+        category: 'FlutterBe',
+        role: 'everyone'
+    },
+    {
+        title: 'iLearn Module: Foundations of Belonging',
+        description: 'Self‑paced interactive module introducing core concepts.',
+        url: 'https://ilearn.platform/foundations-belonging',
+        category: 'iLearn',
+        role: 'everyone'
+    }
+];
+
+// Utility: derive favicon (simple heuristic)
+function getFaviconURL(resourceUrl) {
+    try {
+        const u = new URL(resourceUrl);
+        if (u.hostname !== 'localhost' && u.protocol.startsWith('http')) {
+            return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
+        }
+        return `${u.origin}/favicon.ico`;
+    } catch {
+        return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+    }
+}
+
+function initJourneyCatalog() {
+    const everyonePanel = document.getElementById('tab-everyone');
+    if (!everyonePanel) return;
+
+    const cardsWrap = everyonePanel.querySelector('.tab-catalog-cards');
+    const filtersWrap = everyonePanel.querySelector('.catalog-menu-filters');
+    if (!cardsWrap || !filtersWrap) return;
+
+    // Clear any static placeholders
+    cardsWrap.innerHTML = '';
+    filtersWrap.innerHTML = '';
+
+    const data = JOURNEY_RESOURCES.filter(r => r.role === 'everyone');
+
+    // Build cards
+    data.forEach(res => {
+        const card = document.createElement('div');
+        card.className = 'tab-catalog-card';
+        card.dataset.category = res.category;
+        card.dataset.role = res.role;
+
+        const favicon = getFaviconURL(res.url);
+
+        card.innerHTML = `
+            <span class="catalog-card-title">${res.title}</span>
+            <span class="catalog-card-description">${res.description}</span>
+            <div class="catalog-card-url">
+                <div class="card-url-favicon">
+                    <img src="${favicon}" alt="Favicon for ${res.title}" loading="lazy" onerror="this.style.display='none'">
+                </div>
+                <span>${res.url}</span>
+            </div>
+        `;
+        cardsWrap.appendChild(card);
+
+        card.addEventListener('click', () => {
+            window.open(res.url, '_blank', 'noopener');
+        });
+        card.style.cursor = 'pointer';
+    });
+
+    // Build filter list (single-select toggle)
+    const categoryCounts = data.reduce((acc, r) => {
+        acc[r.category] = (acc[r.category] || 0) + 1;
+        return acc;
+    }, {});
+
+    const categories = Object.keys(categoryCounts).sort((a, b) => a.localeCompare(b));
+
+    categories.forEach(cat => {
+        const item = document.createElement('span');
+        item.className = 'catalog-filter';
+        item.setAttribute('role', 'button');
+        item.tabIndex = 0;
+        item.dataset.category = cat;
+        item.setAttribute('aria-pressed', 'false');
+        item.textContent = `${cat} (${categoryCounts[cat]})`;
+        filtersWrap.appendChild(item);
+    });
+
+    let activeCategory = null;
+
+    function applyFilter(cat) {
+        const cards = cardsWrap.querySelectorAll('.tab-catalog-card');
+        cards.forEach(c => {
+            if (!cat) {
+                c.style.display = '';
+            } else {
+                c.style.display = (c.dataset.category === cat) ? '' : 'none';
+            }
+        });
+        try {
+            parent.postMessage({ type: 'bh-resize', height: document.documentElement.scrollHeight }, '*');
+        } catch { }
+    }
+
+    function updateFilterUI() {
+        filtersWrap.querySelectorAll('.catalog-filter').forEach(el => {
+            const on = el.dataset.category === activeCategory;
+            el.classList.toggle('active', on);
+            el.setAttribute('aria-pressed', on ? 'true' : 'false');
+            // Remove any previous clear icon
+            const oldX = el.querySelector('.filter-clear-x');
+            if (oldX) oldX.remove();
+            if (on) {
+                // Add clear "×" icon
+                const x = document.createElement('span');
+                x.className = 'filter-clear-x';
+                x.setAttribute('aria-label', 'Remove filter');
+                x.setAttribute('role', 'button');
+                x.tabIndex = 0;
+                x.innerHTML = '&times;';
+                el.appendChild(x);
+                x.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    activeCategory = null;
+                    updateFilterUI();
+                    applyFilter(activeCategory);
+                });
+                x.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        activeCategory = null;
+                        updateFilterUI();
+                        applyFilter(activeCategory);
+                    }
+                });
+            }
+        });
+    }
+
+    function toggleFilter(cat) {
+        if (activeCategory === cat) {
+            activeCategory = null;
+        } else {
+            activeCategory = cat;
+        }
+        updateFilterUI();
+        applyFilter(activeCategory);
+    }
+
+    filtersWrap.addEventListener('click', e => {
+        const btn = e.target.closest('.catalog-filter');
+        if (!btn) return;
+        // If clicking the "×", let its own handler run
+        if (e.target.classList.contains('filter-clear-x')) return;
+        toggleFilter(btn.dataset.category);
+    });
+
+    filtersWrap.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const btn = e.target.closest('.catalog-filter');
+        if (!btn) return;
+        if (e.target.classList.contains('filter-clear-x')) return;
+        e.preventDefault();
+        toggleFilter(btn.dataset.category);
+    });
+
+    // Initial UI update
+    updateFilterUI();
+}
+
 // Simple tabs for Journey page
 function initJourneyTabs() {
     const journey = document.getElementById('journey');
@@ -289,6 +496,12 @@ function initJourneyTabs() {
     // Ensure initial state reflects markup
     const initial = Math.max(0, tabs.findIndex(t => t.classList.contains('active')));
     activate(initial, false);
+
+    // Initialize dynamic catalog after tabs wired (only once)
+    if (!window.__journeyCatalogBuilt) {
+        window.__journeyCatalogBuilt = true;
+        initJourneyCatalog();
+    }
 }
 
 function enhanceVideoPlaylistFromMarkup(root, options = {}) {
