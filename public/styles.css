@@ -660,21 +660,26 @@ html.app-loaded .app-loader {
     padding: 1rem 0;
 }
 
-.catalog-section {
+.tab-catalog-cards-container {
+    width: 80%;
     display: flex;
+    justify-content: center;
+    align-items: flex-start;
 }
 
 .tab-catalog-cards {
-    flex: 1;
-    gap: 1rem;
-    justify-content: flex-start;
-    flex-wrap: wrap;
+    width: 100%;
+    column-count: 4;
+    column-gap: 1rem;
+    display: block;
 }
 
 .tab-catalog-card {
+    break-inside: avoid;
+    margin-bottom: 1rem;
     display: flex;
     flex-direction: column;
-    width: 24%;
+    width: 100%;
     height: fit-content;
     gap: 0.7rem;
     padding: 1.5rem;
@@ -734,8 +739,9 @@ html.app-loaded .app-loader {
 }
 
 .tab-catalog-menu {
+    display: flex;
     height: fit-content;
-    width: fit-content;
+    width: 20%;
     flex-direction: column;
     background-color: #fff;
     border: 2px solid #009CDE;
