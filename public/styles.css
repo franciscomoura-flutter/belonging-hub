@@ -708,13 +708,14 @@ html.app-loaded .app-loader {
     gap: 0.5rem;
     font-size: 0.75rem;
     text-decoration: underline;
-    height: 22px;
+    height: 18px;
     margin-top: 0.5rem;
 }
 
 .card-url-favicon {
-    width: 22px;
-    height: 22px;
+    width: auto;
+    height: 18px;
+    aspect-ratio: 1;
 }
 
 .card-url-favicon img {

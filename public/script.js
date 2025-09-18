@@ -225,54 +225,54 @@ document.addEventListener('DOMContentLoaded', function () {
 
 const JOURNEY_RESOURCES = [
     {
-        title: 'Diversity And Inclusion In The Workplace',
-        description: 'Fostering Diversity & Inclusion, Mitigating Unconscious Bias, and Advancing Global Cultural Competence',
-        url: 'https://ppb.udemy.com/course/diversity-and-inclusion-b/',
-        category: 'Udemy',
-        role: 'everyone'
+        title: "Unlocking Belonging at Blip",
+        description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        url: "https://example.com",
+        category: "iLearn",
+        role: "everyone"
     },
     {
-        title: 'Inclusive Communication Essentials',
-        description: 'Practical habits to ensure your daily communication supports inclusion.',
-        url: 'https://ppb.udemy.com/course/inclusive-communication/',
-        category: 'Udemy',
-        role: 'everyone'
+        title: "Trailliant Self-paced Training",
+        description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        url: "https://example.com",
+        category: "FlutterBe",
+        role: "everyone"
     },
     {
-        title: 'Creating Psychological Safety',
-        description: 'How teams unlock performance through trust and openness.',
-        url: 'https://hbr.org/psychological-safety-guide',
-        category: 'HBR',
-        role: 'everyone'
+        title: "Diversity, Equity, and Inclusion: a Beginner’s Guide",
+        description: "Practical strategies for developing your company's global Diversity, Equity, and Inclusion function",
+        url: "https://ppb.udemy.com/course/diversity-equity-and-inclusion-a-beginners-guide/",
+        category: "Udemy",
+        role: "everyone"
     },
     {
-        title: 'Everyday Allyship Practices',
-        description: 'Concrete micro‑behaviours that scale belonging.',
-        url: 'https://hbr.org/everyday-allyship',
-        category: 'HBR',
-        role: 'everyone'
+        title: "Diversity And Inclusion In The Workplace",
+        description: "Fostering Diversity & Inclusion, Mitigating Unconscious Bias, and Advancing Global Cultural Competence",
+        url: "https://ppb.udemy.com/course/diversity-and-inclusion-b/",
+        category: "Udemy",
+        role: "everyone"
     },
     {
-        title: 'Understanding Unconscious Bias',
-        description: 'Recognize patterns and mitigate biased decision making.',
-        url: 'https://hbr.org/unconscious-bias',
-        category: 'HBR',
-        role: 'everyone'
+        title: "Why Diversity Matters",
+        description: "New research makes it increasingly clear that companies with more diverse workforces perform better financially.",
+        url: "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/why-diversity-matters",
+        category: "HBR",
+        role: "everyone"
     },
     {
-        title: 'Inclusive Culture @ FlutterBe',
-        description: 'Internal playbook for shared behaviours and rituals.',
-        url: 'https://intranet.flutterbe.local/inclusive-culture',
-        category: 'FlutterBe',
-        role: 'everyone'
+        title: "Why DEI Still Matters (and How to Get It Right)",
+        description: "A tested approach to DEI that creates lasting change.",
+        url: "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/why-diversity-matters",
+        category: "HBR",
+        role: "everyone"
     },
     {
-        title: 'iLearn Module: Foundations of Belonging',
-        description: 'Self‑paced interactive module introducing core concepts.',
-        url: 'https://ilearn.platform/foundations-belonging',
-        category: 'iLearn',
-        role: 'everyone'
-    }
+        title: "The Diversity & Inclusion Revolution",
+        description: "Eight Powerful Truths.",
+        url: "https://www.deloitte.com/content/dam/insights/articles/2024/4209_diversity-and-inclusion-revolution/di-diversity-and-inclusion-revolution.pdf",
+        category: "HBR",
+        role: "everyone"
+    },
 ];
 
 // Utility: derive favicon (simple heuristic)
