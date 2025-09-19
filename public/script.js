@@ -220,73 +220,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Initialize Journey tabs
         initJourneyTabs();
+
+        // Add click logic for home sub-cards to open journey tabs
+        const subCards = document.querySelectorAll('.section-explore-sub-card');
+        subCards.forEach((card, idx) => {
+            card.addEventListener('click', () => {
+                showMain('journey');
+                // Wait for journey tabs to be initialized
+                setTimeout(() => {
+                    const tablist = document.getElementById('journeyTabs');
+                    if (!tablist) return;
+                    const tabs = tablist.querySelectorAll('[role="tab"]');
+                    if (tabs[idx]) {
+                        tabs[idx].click();
+                        tabs[idx].focus();
+                    }
+                }, 100); // slight delay to ensure DOM update
+            });
+        });
     }
 });
-
-const JOURNEY_RESOURCES = [
-    {
-        title: "Unlocking Belonging at Blip",
-        description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        url: "https://ilearnppb.com/course/view.php?id=18282",
-        category: "iLearn",
-        role: "everyone"
-    },
-    {
-        title: "Trailliant Self-paced Training",
-        description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        url: "https://wd3.myworkday.com/flutterbe/d/home.htmld",
-        category: "FlutterBe",
-        role: "everyone"
-    },
-    {
-        title: "Diversity, Equity, and Inclusion: a Beginner’s Guide",
-        description: "Practical strategies for developing your company's global Diversity, Equity, and Inclusion function",
-        url: "https://ppb.udemy.com/course/diversity-equity-and-inclusion-a-beginners-guide/",
-        category: "Udemy",
-        role: "everyone"
-    },
-    {
-        title: "Diversity And Inclusion In The Workplace",
-        description: "Fostering Diversity & Inclusion, Mitigating Unconscious Bias, and Advancing Global Cultural Competence",
-        url: "https://ppb.udemy.com/course/diversity-and-inclusion-b/",
-        category: "Udemy",
-        role: "everyone"
-    },
-    {
-        title: "Why Diversity Matters",
-        description: "New research makes it increasingly clear that companies with more diverse workforces perform better financially.",
-        url: "https://www.mckinsey.com/capabilities/people-and-organizational-performance/our-insights/why-diversity-matters",
-        category: "HBR",
-        role: "everyone"
-    },
-    {
-        title: "Why DEI Still Matters (and How to Get It Right)",
-        description: "A tested approach to DEI that creates lasting change.",
-        url: "https://hbr.org/podcast/2024/11/why-dei-still-matters-and-how-to-get-it-right",
-        category: "HBR",
-        role: "everyone"
-    },
-    {
-        title: "The Diversity & Inclusion Revolution",
-        description: "Eight Powerful Truths.",
-        url: "https://www.deloitte.com/content/dam/insights/articles/2024/4209_diversity-and-inclusion-revolution/di-diversity-and-inclusion-revolution.pdf",
-        category: "HBR",
-        role: "everyone"
-    },
-];
-
-// Utility: derive favicon (simple heuristic)
-function getFaviconURL(resourceUrl) {
-    try {
-        const u = new URL(resourceUrl);
-        if (u.hostname !== 'localhost' && u.protocol.startsWith('http')) {
-            return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
-        }
-        return `${u.origin}/favicon.ico`;
-    } catch {
-        return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-    }
-}
 
 function initJourneyCatalog() {
     const everyonePanel = document.getElementById('tab-everyone');
@@ -300,134 +253,154 @@ function initJourneyCatalog() {
     cardsWrap.innerHTML = '';
     filtersWrap.innerHTML = '';
 
-    const data = JOURNEY_RESOURCES.filter(r => r.role === 'everyone');
+    // Load CSV and build cards
+    Papa.parse('journey.csv', {
+        download: true,
+        header: true,
+        complete: function (results) {
+            const data = results.data.filter(r => r.role === 'everyone');
 
-    // Build cards
-    data.forEach(res => {
-        const card = document.createElement('div');
-        card.className = 'tab-catalog-card';
-        card.dataset.category = res.category;
-        card.dataset.role = res.role;
+            // Build cards
+            data.forEach(res => {
+                const card = document.createElement('div');
+                card.className = 'tab-catalog-card';
+                card.dataset.category = res.category;
+                card.dataset.role = res.role;
 
-        const favicon = getFaviconURL(res.url);
+                const favicon = getFaviconURL(res.url);
 
-        card.innerHTML = `
-            <span class="catalog-card-title">${res.title}</span>
-            <span class="catalog-card-description">${res.description}</span>
-            <div class="catalog-card-url">
-                <div class="card-url-favicon">
-                    <img src="${favicon}" alt="Favicon for ${res.title}" loading="lazy" onerror="this.style.display='none'">
-                </div>
-                <span>${res.url}</span>
-            </div>
-        `;
-        cardsWrap.appendChild(card);
+                card.innerHTML = `
+                    <span class="catalog-card-title">${res.title}</span>
+                    <span class="catalog-card-description">${res.description}</span>
+                    <div class="catalog-card-url">
+                        <div class="card-url-favicon">
+                            <img src="${favicon}" alt="Favicon for ${res.title}" loading="lazy" onerror="this.style.display='none'">
+                        </div>
+                        <span>${res.url}</span>
+                    </div>
+                `;
+                cardsWrap.appendChild(card);
 
-        card.addEventListener('click', () => {
-            window.open(res.url, '_blank', 'noopener');
-        });
-        card.style.cursor = 'pointer';
-    });
-
-    // Build filter list (single-select toggle)
-    const categoryCounts = data.reduce((acc, r) => {
-        acc[r.category] = (acc[r.category] || 0) + 1;
-        return acc;
-    }, {});
-
-    const categories = Object.keys(categoryCounts).sort((a, b) => a.localeCompare(b));
-
-    categories.forEach(cat => {
-        const item = document.createElement('span');
-        item.className = 'catalog-filter';
-        item.setAttribute('role', 'button');
-        item.tabIndex = 0;
-        item.dataset.category = cat;
-        item.setAttribute('aria-pressed', 'false');
-        item.textContent = `${cat} (${categoryCounts[cat]})`;
-        filtersWrap.appendChild(item);
-    });
-
-    let activeCategory = null;
-
-    function applyFilter(cat) {
-        const cards = cardsWrap.querySelectorAll('.tab-catalog-card');
-        cards.forEach(c => {
-            if (!cat) {
-                c.style.display = '';
-            } else {
-                c.style.display = (c.dataset.category === cat) ? '' : 'none';
-            }
-        });
-        try {
-            parent.postMessage({ type: 'bh-resize', height: document.documentElement.scrollHeight }, '*');
-        } catch { }
-    }
-
-    function updateFilterUI() {
-        filtersWrap.querySelectorAll('.catalog-filter').forEach(el => {
-            const on = el.dataset.category === activeCategory;
-            el.classList.toggle('active', on);
-            el.setAttribute('aria-pressed', on ? 'true' : 'false');
-            // Remove any previous clear icon
-            const oldX = el.querySelector('.filter-clear-x');
-            if (oldX) oldX.remove();
-            if (on) {
-                // Add clear "×" icon
-                const x = document.createElement('span');
-                x.className = 'filter-clear-x';
-                x.setAttribute('aria-label', 'Remove filter');
-                x.setAttribute('role', 'button');
-                x.tabIndex = 0;
-                x.innerHTML = '&times;';
-                el.appendChild(x);
-                x.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    activeCategory = null;
-                    updateFilterUI();
-                    applyFilter(activeCategory);
+                card.addEventListener('click', () => {
+                    window.open(res.url, '_blank', 'noopener');
                 });
-                x.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        activeCategory = null;
-                        updateFilterUI();
-                        applyFilter(activeCategory);
+                card.style.cursor = 'pointer';
+            });
+
+            // Build filter list (single-select toggle)
+            const categoryCounts = data.reduce((acc, r) => {
+                acc[r.category] = (acc[r.category] || 0) + 1;
+                return acc;
+            }, {});
+
+            const categories = Object.keys(categoryCounts).sort((a, b) => a.localeCompare(b));
+
+            categories.forEach(cat => {
+                const item = document.createElement('span');
+                item.className = 'catalog-filter';
+                item.setAttribute('role', 'button');
+                item.tabIndex = 0;
+                item.dataset.category = cat;
+                item.setAttribute('aria-pressed', 'false');
+                item.textContent = `${cat} (${categoryCounts[cat]})`;
+                filtersWrap.appendChild(item);
+            });
+
+            let activeCategory = null;
+
+            function applyFilter(cat) {
+                const cards = cardsWrap.querySelectorAll('.tab-catalog-card');
+                cards.forEach(c => {
+                    if (!cat) {
+                        c.style.display = '';
+                    } else {
+                        c.style.display = (c.dataset.category === cat) ? '' : 'none';
+                    }
+                });
+                try {
+                    parent.postMessage({ type: 'bh-resize', height: document.documentElement.scrollHeight }, '*');
+                } catch { }
+            }
+
+            function updateFilterUI() {
+                filtersWrap.querySelectorAll('.catalog-filter').forEach(el => {
+                    const on = el.dataset.category === activeCategory;
+                    el.classList.toggle('active', on);
+                    el.setAttribute('aria-pressed', on ? 'true' : 'false');
+                    // Remove any previous clear icon
+                    const oldX = el.querySelector('.filter-clear-x');
+                    if (oldX) oldX.remove();
+                    if (on) {
+                        // Add clear "×" icon
+                        const x = document.createElement('span');
+                        x.className = 'filter-clear-x';
+                        x.setAttribute('aria-label', 'Remove filter');
+                        x.setAttribute('role', 'button');
+                        x.tabIndex = 0;
+                        x.innerHTML = '&times;';
+                        el.appendChild(x);
+                        x.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            activeCategory = null;
+                            updateFilterUI();
+                            applyFilter(activeCategory);
+                        });
+                        x.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                activeCategory = null;
+                                updateFilterUI();
+                                applyFilter(activeCategory);
+                            }
+                        });
                     }
                 });
             }
-        });
-    }
 
-    function toggleFilter(cat) {
-        if (activeCategory === cat) {
-            activeCategory = null;
-        } else {
-            activeCategory = cat;
+            function toggleFilter(cat) {
+                if (activeCategory === cat) {
+                    activeCategory = null;
+                } else {
+                    activeCategory = cat;
+                }
+                updateFilterUI();
+                applyFilter(activeCategory);
+            }
+
+            filtersWrap.addEventListener('click', e => {
+                const btn = e.target.closest('.catalog-filter');
+                if (!btn) return;
+                // If clicking the "×", let its own handler run
+                if (e.target.classList.contains('filter-clear-x')) return;
+                toggleFilter(btn.dataset.category);
+            });
+
+            filtersWrap.addEventListener('keydown', e => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const btn = e.target.closest('.catalog-filter');
+                if (!btn) return;
+                if (e.target.classList.contains('filter-clear-x')) return;
+                e.preventDefault();
+                toggleFilter(btn.dataset.category);
+            });
+
+            // Initial UI update
+            updateFilterUI();
         }
-        updateFilterUI();
-        applyFilter(activeCategory);
+    });
+}
+
+// Utility: derive favicon (simple heuristic)
+function getFaviconURL(resourceUrl) {
+    try {
+        const u = new URL(resourceUrl);
+        if (u.hostname !== 'localhost' && u.protocol.startsWith('http')) {
+            return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
+        }
+        return `${u.origin}/favicon.ico`;
+    } catch {
+        return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
     }
-
-    filtersWrap.addEventListener('click', e => {
-        const btn = e.target.closest('.catalog-filter');
-        if (!btn) return;
-        // If clicking the "×", let its own handler run
-        if (e.target.classList.contains('filter-clear-x')) return;
-        toggleFilter(btn.dataset.category);
-    });
-
-    filtersWrap.addEventListener('keydown', e => {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        const btn = e.target.closest('.catalog-filter');
-        if (!btn) return;
-        if (e.target.classList.contains('filter-clear-x')) return;
-        e.preventDefault();
-        toggleFilter(btn.dataset.category);
-    });
-
-    // Initial UI update
-    updateFilterUI();
 }
 
 // Simple tabs for Journey page
