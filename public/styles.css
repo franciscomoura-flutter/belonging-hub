@@ -706,6 +706,10 @@ html.app-loaded .app-loader {
     line-height: 1.4;
     color: #231f20;
     overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
 }
 
 .catalog-card-url {

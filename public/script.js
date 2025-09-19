@@ -242,153 +242,211 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function initJourneyCatalog() {
-    const everyonePanel = document.getElementById('tab-everyone');
-    if (!everyonePanel) return;
-
-    const cardsWrap = everyonePanel.querySelector('.tab-catalog-cards');
-    const filtersWrap = everyonePanel.querySelector('.catalog-menu-filters');
-    if (!cardsWrap || !filtersWrap) return;
-
-    // Clear any static placeholders
-    cardsWrap.innerHTML = '';
-    filtersWrap.innerHTML = '';
-
-    // Load CSV and build cards
+    // Load CSV and build catalogs for all tabs
     Papa.parse('journey.csv', {
         download: true,
         header: true,
         complete: function (results) {
-            const data = results.data.filter(r => r.role === 'everyone');
+            const data = results.data.filter(r => r.title && r.title.trim() && r.role && r.role.trim()); // More robust filtering
 
-            // Build cards
-            data.forEach(res => {
-                const card = document.createElement('div');
-                card.className = 'tab-catalog-card';
-                card.dataset.category = res.category;
-                card.dataset.role = res.role;
+            // Define role mappings
+            const roleMapping = {
+                'everyone': 'tab-everyone',
+                'managers': 'tab-managers',
+                'hiring managers': 'tab-hiring'
+            };
 
-                const favicon = getFaviconURL(res.url);
-                const displayUrl = res.url.replace(/^(https?:\/\/)/i, '');
+            // Process each role
+            Object.keys(roleMapping).forEach(role => {
+                const tabId = roleMapping[role];
+                const tabPanel = document.getElementById(tabId);
+                if (!tabPanel) return;
 
-                card.innerHTML = `
-                    <span class="catalog-card-title">${res.title}</span>
-                    <span class="catalog-card-description">${res.description}</span>
-                    <div class="catalog-card-url">
-                        <div class="card-url-favicon">
-                            <img src="${favicon}" alt="Favicon for ${res.title}" loading="lazy" onerror="this.style.display='none'">
+                // Filter data for this role (case-insensitive and trim whitespace)
+                const roleData = data.filter(r => r.role.toLowerCase().trim() === role);
+
+                // Create catalog structure if it doesn't exist
+                let catalogContainer = tabPanel.querySelector('.tab-catalog');
+                if (!catalogContainer) {
+                    catalogContainer = document.createElement('div');
+                    catalogContainer.className = 'tab-catalog';
+                    catalogContainer.innerHTML = `
+                        <div class="tab-catalog-cards-container">
+                            <div class="tab-catalog-cards"></div>
                         </div>
-                        <span>${displayUrl}</span>
-                    </div>
-                `;
-                cardsWrap.appendChild(card);
-
-                card.addEventListener('click', () => {
-                    window.open(res.url, '_blank', 'noopener');
-                });
-                card.style.cursor = 'pointer';
-            });
-
-            // Build filter list (single-select toggle)
-            const categoryCounts = data.reduce((acc, r) => {
-                acc[r.category] = (acc[r.category] || 0) + 1;
-                return acc;
-            }, {});
-
-            const categories = Object.keys(categoryCounts).sort((a, b) => a.localeCompare(b));
-
-            categories.forEach(cat => {
-                const item = document.createElement('span');
-                item.className = 'catalog-filter';
-                item.setAttribute('role', 'button');
-                item.tabIndex = 0;
-                item.dataset.category = cat;
-                item.setAttribute('aria-pressed', 'false');
-                item.textContent = `${cat} (${categoryCounts[cat]})`;
-                filtersWrap.appendChild(item);
-            });
-
-            let activeCategory = null;
-
-            function applyFilter(cat) {
-                const cards = cardsWrap.querySelectorAll('.tab-catalog-card');
-                cards.forEach(c => {
-                    if (!cat) {
-                        c.style.display = '';
-                    } else {
-                        c.style.display = (c.dataset.category === cat) ? '' : 'none';
-                    }
-                });
-                try {
-                    parent.postMessage({ type: 'bh-resize', height: document.documentElement.scrollHeight }, '*');
-                } catch { }
-            }
-
-            function updateFilterUI() {
-                filtersWrap.querySelectorAll('.catalog-filter').forEach(el => {
-                    const on = el.dataset.category === activeCategory;
-                    el.classList.toggle('active', on);
-                    el.setAttribute('aria-pressed', on ? 'true' : 'false');
-                    // Remove any previous clear icon
-                    const oldX = el.querySelector('.filter-clear-x');
-                    if (oldX) oldX.remove();
-                    if (on) {
-                        // Add clear "×" icon
-                        const x = document.createElement('span');
-                        x.className = 'filter-clear-x';
-                        x.setAttribute('aria-label', 'Remove filter');
-                        x.setAttribute('role', 'button');
-                        x.tabIndex = 0;
-                        x.innerHTML = '&times;';
-                        el.appendChild(x);
-                        x.addEventListener('click', function (e) {
-                            e.stopPropagation();
-                            activeCategory = null;
-                            updateFilterUI();
-                            applyFilter(activeCategory);
-                        });
-                        x.addEventListener('keydown', function (e) {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                activeCategory = null;
-                                updateFilterUI();
-                                applyFilter(activeCategory);
-                            }
-                        });
-                    }
-                });
-            }
-
-            function toggleFilter(cat) {
-                if (activeCategory === cat) {
-                    activeCategory = null;
-                } else {
-                    activeCategory = cat;
+                        <div class="tab-catalog-menu">
+                            <span class="catalog-menu-title">CATALOG'S FILTER OPTIONS</span>
+                            <div class="catalog-menu-filters"></div>
+                        </div>
+                    `;
+                    tabPanel.appendChild(catalogContainer);
                 }
-                updateFilterUI();
-                applyFilter(activeCategory);
-            }
 
-            filtersWrap.addEventListener('click', e => {
-                const btn = e.target.closest('.catalog-filter');
-                if (!btn) return;
-                // If clicking the "×", let its own handler run
-                if (e.target.classList.contains('filter-clear-x')) return;
-                toggleFilter(btn.dataset.category);
+                const cardsWrap = catalogContainer.querySelector('.tab-catalog-cards');
+                const filtersWrap = catalogContainer.querySelector('.catalog-menu-filters');
+
+                if (!cardsWrap || !filtersWrap) return;
+
+                // Clear any existing content
+                cardsWrap.innerHTML = '';
+                filtersWrap.innerHTML = '';
+
+                // Only proceed if there are cards for this role
+                if (roleData.length === 0) {
+                    cardsWrap.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">No resources available yet for this role.</div>';
+                    catalogContainer.querySelector('.tab-catalog-menu').style.display = 'none';
+                    return;
+                }
+
+                // Build cards for this role
+                roleData.forEach(res => {
+                    const card = document.createElement('div');
+                    card.className = 'tab-catalog-card';
+                    card.dataset.category = res.category || 'Other';
+                    card.dataset.role = res.role;
+
+                    const favicon = getFaviconURL(res.url);
+                    const displayUrl = res.url.replace(/^(https?:\/\/)/i, '');
+
+                    card.innerHTML = `
+                        <span class="catalog-card-title">${res.title}</span>
+                        <span class="catalog-card-description">${res.description || ''}</span>
+                        <div class="catalog-card-url">
+                            <div class="card-url-favicon">
+                                <img src="${favicon}" alt="Favicon for ${res.title}" loading="lazy" onerror="this.style.display='none'">
+                            </div>
+                            <span>${displayUrl}</span>
+                        </div>
+                    `;
+                    cardsWrap.appendChild(card);
+
+                    card.addEventListener('click', () => {
+                        window.open(res.url, '_blank', 'noopener');
+                    });
+                    card.style.cursor = 'pointer';
+                });
+
+                // Build filter list for this role's categories
+                const categoryCounts = roleData.reduce((acc, r) => {
+                    const category = r.category || 'Other';
+                    acc[category] = (acc[category] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const categories = Object.keys(categoryCounts).sort((a, b) => a.localeCompare(b));
+
+                // Only create filters if there are categories for this role
+                if (categories.length > 0) {
+                    categories.forEach(cat => {
+                        const item = document.createElement('span');
+                        item.className = 'catalog-filter';
+                        item.setAttribute('role', 'button');
+                        item.tabIndex = 0;
+                        item.dataset.category = cat;
+                        item.setAttribute('aria-pressed', 'false');
+                        item.textContent = `${cat} (${categoryCounts[cat]})`;
+                        filtersWrap.appendChild(item);
+                    });
+
+                    // Set up filtering for this tab
+                    setupTabFiltering(catalogContainer, role);
+                    catalogContainer.querySelector('.tab-catalog-menu').style.display = 'flex';
+                } else {
+                    // Hide filter menu if no categories
+                    catalogContainer.querySelector('.tab-catalog-menu').style.display = 'none';
+                }
             });
-
-            filtersWrap.addEventListener('keydown', e => {
-                if (e.key !== 'Enter' && e.key !== ' ') return;
-                const btn = e.target.closest('.catalog-filter');
-                if (!btn) return;
-                if (e.target.classList.contains('filter-clear-x')) return;
-                e.preventDefault();
-                toggleFilter(btn.dataset.category);
-            });
-
-            // Initial UI update
-            updateFilterUI();
+        },
+        error: function (error) {
+            console.error('Error loading CSV:', error);
         }
     });
+}
+
+function setupTabFiltering(catalogContainer, role) {
+    const cardsWrap = catalogContainer.querySelector('.tab-catalog-cards');
+    const filtersWrap = catalogContainer.querySelector('.catalog-menu-filters');
+
+    let activeCategory = null;
+
+    function applyFilter(cat) {
+        const cards = cardsWrap.querySelectorAll('.tab-catalog-card');
+        cards.forEach(c => {
+            if (!cat) {
+                c.style.display = '';
+            } else {
+                c.style.display = (c.dataset.category === cat) ? '' : 'none';
+            }
+        });
+        try {
+            parent.postMessage({ type: 'bh-resize', height: document.documentElement.scrollHeight }, '*');
+        } catch { }
+    }
+
+    function updateFilterUI() {
+        filtersWrap.querySelectorAll('.catalog-filter').forEach(el => {
+            const on = el.dataset.category === activeCategory;
+            el.classList.toggle('active', on);
+            el.setAttribute('aria-pressed', on ? 'true' : 'false');
+            // Remove any previous clear icon
+            const oldX = el.querySelector('.filter-clear-x');
+            if (oldX) oldX.remove();
+            if (on) {
+                // Add clear "×" icon
+                const x = document.createElement('span');
+                x.className = 'filter-clear-x';
+                x.setAttribute('aria-label', 'Remove filter');
+                x.setAttribute('role', 'button');
+                x.tabIndex = 0;
+                x.innerHTML = '&times;';
+                el.appendChild(x);
+                x.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    activeCategory = null;
+                    updateFilterUI();
+                    applyFilter(activeCategory);
+                });
+                x.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        activeCategory = null;
+                        updateFilterUI();
+                        applyFilter(activeCategory);
+                    }
+                });
+            }
+        });
+    }
+
+    function toggleFilter(cat) {
+        if (activeCategory === cat) {
+            activeCategory = null;
+        } else {
+            activeCategory = cat;
+        }
+        updateFilterUI();
+        applyFilter(activeCategory);
+    }
+
+    filtersWrap.addEventListener('click', e => {
+        const btn = e.target.closest('.catalog-filter');
+        if (!btn) return;
+        // If clicking the "×", let its own handler run
+        if (e.target.classList.contains('filter-clear-x')) return;
+        toggleFilter(btn.dataset.category);
+    });
+
+    filtersWrap.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const btn = e.target.closest('.catalog-filter');
+        if (!btn) return;
+        if (e.target.classList.contains('filter-clear-x')) return;
+        e.preventDefault();
+        toggleFilter(btn.dataset.category);
+    });
+
+    // Initial UI update
+    updateFilterUI();
 }
 
 // Utility: derive favicon (simple heuristic)
