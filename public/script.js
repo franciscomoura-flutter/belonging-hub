@@ -268,6 +268,7 @@ function initJourneyCatalog() {
                 card.dataset.role = res.role;
 
                 const favicon = getFaviconURL(res.url);
+                const displayUrl = res.url.replace(/^(https?:\/\/)/i, '');
 
                 card.innerHTML = `
                     <span class="catalog-card-title">${res.title}</span>
@@ -276,7 +277,7 @@ function initJourneyCatalog() {
                         <div class="card-url-favicon">
                             <img src="${favicon}" alt="Favicon for ${res.title}" loading="lazy" onerror="this.style.display='none'">
                         </div>
-                        <span>${res.url}</span>
+                        <span>${displayUrl}</span>
                     </div>
                 `;
                 cardsWrap.appendChild(card);
