@@ -242,6 +242,9 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function initJourneyCatalog() {
+    // Define color pool for card circles
+    const colorPool = ['#009cde', '#26d07c', '#f277c6', '#9063cd', '#ffda00'];
+
     // Load CSV and build catalogs for all tabs
     Papa.parse('journey.csv', {
         download: true,
@@ -299,11 +302,20 @@ function initJourneyCatalog() {
                 }
 
                 // Build cards for this role
-                roleData.forEach(res => {
+                roleData.forEach((res, index) => {
                     const card = document.createElement('div');
                     card.className = 'tab-catalog-card';
                     card.dataset.category = res.category || 'Other';
                     card.dataset.role = res.role;
+
+                    // Pick two different colors from the pool for this card
+                    const shuffledColors = [...colorPool].sort(() => 0.5 - Math.random());
+                    const topColor = shuffledColors[0];
+                    const bottomColor = shuffledColors[1];
+
+                    // Set custom CSS properties for this card's circles
+                    card.style.setProperty('--top-circle-color', topColor);
+                    card.style.setProperty('--bottom-circle-color', bottomColor);
 
                     const favicon = getFaviconURL(res.url);
                     const displayUrl = res.url.replace(/^(https?:\/\/)/i, '');

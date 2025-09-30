@@ -707,7 +707,7 @@ html.app-loaded .app-loader {
     width: auto;
     height: calc(100% - 45px);
     aspect-ratio: 1/1;
-    border: 45px solid #26D07C;
+    border: 45px solid var(--top-circle-color);
     border-radius: 50%;
     background: none;
     pointer-events: none;
@@ -723,7 +723,7 @@ html.app-loaded .app-loader {
     width: auto;
     height: calc(100% - 45px);
     aspect-ratio: 1/1;
-    border: 45px solid #FFDA00;
+    border: 45px solid var(--bottom-circle-color);
     border-radius: 50%;
     background: none;
     pointer-events: none;
