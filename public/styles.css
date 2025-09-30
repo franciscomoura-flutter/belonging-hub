@@ -690,10 +690,50 @@ html.app-loaded .app-loader {
     height: fit-content;
     gap: 0.7rem;
     padding: 1.5rem;
+    padding-right: 8.5rem;
     background-color: white;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 15px;
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-catalog-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: auto;
+    height: calc(100% - 45px);
+    aspect-ratio: 1/1;
+    border: 45px solid #26D07C;
+    border-radius: 50%;
+    background: none;
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(50%, -50%);
+}
+
+.tab-catalog-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: auto;
+    height: calc(100% - 45px);
+    aspect-ratio: 1/1;
+    border: 45px solid #FFDA00;
+    border-radius: 50%;
+    background: none;
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(50%, 50%);
+}
+
+.tab-catalog-card>* {
+    position: relative;
+    z-index: 1;
 }
 
 .tab-catalog-card:hover {
@@ -704,7 +744,7 @@ html.app-loaded .app-loader {
 .catalog-card-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #009CDE;
+    color: #050610;
     line-height: 1.4;
 }
 
