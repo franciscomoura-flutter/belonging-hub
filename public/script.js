@@ -245,6 +245,46 @@ function initJourneyCatalog() {
     // Define color pool for card circles
     const colorPool = ['#009cde', '#26d07c', '#f277c6', '#9063cd', '#ffda00'];
 
+    // Create all unique color combinations
+    function createColorCombinations(colors) {
+        const combinations = [];
+        for (let i = 0; i < colors.length; i++) {
+            for (let j = 0; j < colors.length; j++) {
+                if (i !== j) { // Ensure different colors for top and bottom
+                    combinations.push([colors[i], colors[j]]);
+                }
+            }
+        }
+        return combinations;
+    }
+
+    // Shuffle array function
+    function shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }
+
+    // Create color combination manager
+    function createColorManager() {
+        let availableCombinations = shuffleArray(createColorCombinations(colorPool));
+        let currentIndex = 0;
+
+        return {
+            getNextCombination() {
+                if (currentIndex >= availableCombinations.length) {
+                    // Reshuffle and reset when we run out of combinations
+                    availableCombinations = shuffleArray(createColorCombinations(colorPool));
+                    currentIndex = 0;
+                }
+                return availableCombinations[currentIndex++];
+            }
+        };
+    }
+
     // Load CSV and build catalogs for all tabs
     Papa.parse('journey.csv', {
         download: true,
@@ -301,6 +341,9 @@ function initJourneyCatalog() {
                     return;
                 }
 
+                // Create color manager for this role's cards
+                const colorManager = createColorManager();
+
                 // Build cards for this role
                 roleData.forEach((res, index) => {
                     const card = document.createElement('div');
@@ -308,10 +351,8 @@ function initJourneyCatalog() {
                     card.dataset.category = res.category || 'Other';
                     card.dataset.role = res.role;
 
-                    // Pick two different colors from the pool for this card
-                    const shuffledColors = [...colorPool].sort(() => 0.5 - Math.random());
-                    const topColor = shuffledColors[0];
-                    const bottomColor = shuffledColors[1];
+                    // Get next unique color combination
+                    const [topColor, bottomColor] = colorManager.getNextCombination();
 
                     // Set custom CSS properties for this card's circles
                     card.style.setProperty('--top-circle-color', topColor);
@@ -586,6 +627,25 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
 
     const state = { currentIndex: 0, items };
 
+    // Define color pool for circles
+    const colorPool = ['#009cde', '#26d07c', '#f277c6', '#9063cd', '#ffda00'];
+
+    // Find the video-playlist-info element
+    const playlistInfo = root.querySelector('.video-playlist-info');
+
+    function updateColors() {
+        if (playlistInfo) {
+            // Pick two different colors from the pool
+            const shuffledColors = [...colorPool].sort(() => 0.5 - Math.random());
+            const topColor = shuffledColors[0];
+            const bottomColor = shuffledColors[1];
+
+            // Set custom CSS properties for this element's circles
+            playlistInfo.style.setProperty('--top-circle-color', topColor);
+            playlistInfo.style.setProperty('--bottom-circle-color', bottomColor);
+        }
+    }
+
     function renderList() {
         listEl.innerHTML = '';
         state.items.forEach((item, idx) => {
@@ -636,10 +696,12 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     function selectIndex(idx, autoplay) {
         if (idx < 0 || idx >= state.items.length || idx === state.currentIndex) return;
         state.currentIndex = idx;
+        updateColors(); // Update colors when video changes
         loadCurrent(autoplay);
     }
 
     renderList();
+    updateColors(); // Set initial colors
     loadCurrent(options.autoplayFirst === true);
 
     // Thumbnail generation from video first frame

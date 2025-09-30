@@ -469,10 +469,45 @@ html.app-loaded .app-loader {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    background-color: #9063CD;
-    color: #fff;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: none;
     border-radius: 0 0 20px 20px;
     padding: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.video-playlist-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: auto;
+    height: calc(100% - 40px);
+    aspect-ratio: 1/1;
+    border: 40px solid var(--top-circle-color);
+    border-radius: 50%;
+    background: none;
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(50%, -50%);
+}
+
+.video-playlist-info::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: auto;
+    height: calc(100% - 40px);
+    aspect-ratio: 1/1;
+    border: 40px solid var(--bottom-circle-color);
+    border-radius: 50%;
+    background: none;
+    pointer-events: none;
+    z-index: 0;
+    transform: translate(50%, 50%);
 }
 
 .video-playlist-info h3 {
