@@ -271,12 +271,12 @@ function initJourneyCatalog() {
                     catalogContainer = document.createElement('div');
                     catalogContainer.className = 'tab-catalog';
                     catalogContainer.innerHTML = `
-                        <div class="tab-catalog-cards-container">
-                            <div class="tab-catalog-cards"></div>
-                        </div>
-                        <div class="tab-catalog-menu">
-                            <span class="catalog-menu-title">CATALOG'S FILTER OPTIONS</span>
+                    <div class="tab-catalog-menu">
+                            <span class="catalog-menu-title">Filter by:</span>
                             <div class="catalog-menu-filters"></div>
+                        </div>
+                    <div class="tab-catalog-cards-container">
+                            <div class="tab-catalog-cards"></div>
                         </div>
                     `;
                     tabPanel.appendChild(catalogContainer);
@@ -333,7 +333,19 @@ function initJourneyCatalog() {
                     return acc;
                 }, {});
 
-                const categories = Object.keys(categoryCounts).sort((a, b) => a.localeCompare(b));
+                // Sort categories by count (descending) then alphabetically
+                const categories = Object.keys(categoryCounts).sort((a, b) => {
+                    const countA = categoryCounts[a];
+                    const countB = categoryCounts[b];
+
+                    // If counts are different, sort by count (descending)
+                    if (countA !== countB) {
+                        return countB - countA;
+                    }
+
+                    // If counts are the same, sort alphabetically
+                    return a.localeCompare(b);
+                });
 
                 // Only create filters if there are categories for this role
                 if (categories.length > 0) {
@@ -344,7 +356,7 @@ function initJourneyCatalog() {
                         item.tabIndex = 0;
                         item.dataset.category = cat;
                         item.setAttribute('aria-pressed', 'false');
-                        item.textContent = `${cat} (${categoryCounts[cat]})`;
+                        item.innerHTML = `${cat} <span class="filter-count">${categoryCounts[cat]}</span>`;
                         filtersWrap.appendChild(item);
                     });
 
@@ -367,7 +379,12 @@ function setupTabFiltering(catalogContainer, role) {
     const cardsWrap = catalogContainer.querySelector('.tab-catalog-cards');
     const filtersWrap = catalogContainer.querySelector('.catalog-menu-filters');
 
+    // Set first filter as active by default
     let activeCategory = null;
+    const firstFilter = filtersWrap.querySelector('.catalog-filter');
+    if (firstFilter) {
+        activeCategory = firstFilter.dataset.category;
+    }
 
     function applyFilter(cat) {
         const cards = cardsWrap.querySelectorAll('.tab-catalog-card');
@@ -388,42 +405,12 @@ function setupTabFiltering(catalogContainer, role) {
             const on = el.dataset.category === activeCategory;
             el.classList.toggle('active', on);
             el.setAttribute('aria-pressed', on ? 'true' : 'false');
-            // Remove any previous clear icon
-            const oldX = el.querySelector('.filter-clear-x');
-            if (oldX) oldX.remove();
-            if (on) {
-                // Add clear "×" icon
-                const x = document.createElement('span');
-                x.className = 'filter-clear-x';
-                x.setAttribute('aria-label', 'Remove filter');
-                x.setAttribute('role', 'button');
-                x.tabIndex = 0;
-                x.innerHTML = '&times;';
-                el.appendChild(x);
-                x.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    activeCategory = null;
-                    updateFilterUI();
-                    applyFilter(activeCategory);
-                });
-                x.addEventListener('keydown', function (e) {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        activeCategory = null;
-                        updateFilterUI();
-                        applyFilter(activeCategory);
-                    }
-                });
-            }
         });
     }
 
-    function toggleFilter(cat) {
-        if (activeCategory === cat) {
-            activeCategory = null;
-        } else {
-            activeCategory = cat;
-        }
+    function selectFilter(cat) {
+        if (activeCategory === cat) return; // Don't deselect if already active
+        activeCategory = cat;
         updateFilterUI();
         applyFilter(activeCategory);
     }
@@ -431,22 +418,20 @@ function setupTabFiltering(catalogContainer, role) {
     filtersWrap.addEventListener('click', e => {
         const btn = e.target.closest('.catalog-filter');
         if (!btn) return;
-        // If clicking the "×", let its own handler run
-        if (e.target.classList.contains('filter-clear-x')) return;
-        toggleFilter(btn.dataset.category);
+        selectFilter(btn.dataset.category);
     });
 
     filtersWrap.addEventListener('keydown', e => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         const btn = e.target.closest('.catalog-filter');
         if (!btn) return;
-        if (e.target.classList.contains('filter-clear-x')) return;
         e.preventDefault();
-        toggleFilter(btn.dataset.category);
+        selectFilter(btn.dataset.category);
     });
 
-    // Initial UI update
+    // Initial setup
     updateFilterUI();
+    applyFilter(activeCategory);
 }
 
 // Utility: derive favicon (simple heuristic)
