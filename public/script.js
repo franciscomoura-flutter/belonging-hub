@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const pauseSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M18.535 4.766c.73.27 1.215.965 1.215 1.743V17.49c0 .778-.485 1.474-1.215 1.743a4.44 4.44 0 0 1-3.07 0a1.86 1.86 0 0 1-1.215-1.743V6.51c0-.778.485-1.474 1.215-1.743a4.44 4.44 0 0 1 3.07 0M18.25 6.51a.36.36 0 0 0-.234-.335a2.94 2.94 0 0 0-2.032 0a.36.36 0 0 0-.234.335v10.98c0 .15.093.284.234.335a2.94 2.94 0 0 0 2.032 0a.36.36 0 0 0 .234-.335zM8.535 4.766c.73.27 1.215.965 1.215 1.743V17.49c0 .778-.485 1.474-1.215 1.743a4.44 4.44 0 0 1-3.07 0A1.86 1.86 0 0 1 4.25 17.49V6.51c0-.778.485-1.474 1.215-1.743a4.44 4.44 0 0 1 3.07 0M8.25 6.51a.36.36 0 0 0-.234-.335a2.94 2.94 0 0 0-2.032 0a.36.36 0 0 0-.234.335v10.98c0 .15.093.284.234.335a2.94 2.94 0 0 0 2.032 0a.36.36 0 0 0 .234-.335z" clip-rule="evenodd"/></svg>`;
         const playSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16.394 12L10 7.737v8.526zm2.982.416L8.777 19.482A.5.5 0 0 1 8 19.066V4.934a.5.5 0 0 1 .777-.416l10.599 7.066a.5.5 0 0 1 0 .832"/></svg>`;
         const unmuteSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3.75v16.5a.75.75 0 0 1-1.255.555L5.46 16H2.75A1.75 1.75 0 0 1 1 14.25v-4.5C1 8.784 1.784 8 2.75 8h2.71l5.285-4.805A.75.75 0 0 1 12 3.75M6.255 9.305a.75.75 0 0 1-.505.195h-3a.25.25 0 0 0-.25.25v4.5c0 .138.112.25.25.25h3c.187 0 .367.069.505.195l4.245 3.86V5.445ZM16.28 8.22a.75.75 0 1 0-1.06 1.06L17.94 12l-2.72 2.72a.75.75 0 1 0 1.06 1.06L19 13.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L20.06 12l2.72-2.72a.75.75 0 0 0-1.06-1.06L19 10.94z"/></svg>`;
-        const muteSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M11.553 3.064A.75.75 0 0 1 12 3.75v16.5a.75.75 0 0 1-1.255.555L5.46 16H2.75A1.75 1.75 0 0 1 1 14.25v-4.5C1 8.784 1.784 8 2.75 8h2.71l5.285-4.805a.75.75 0 0 1 .808-.13ZM10.5 5.445l-4.245 3.86a.75.75 0 0 1-.505.195h-3a.25.25 0 0 0-.25.25v4.5c0 .138.112.25.25.25h3c.187 0 .367.069.505.195l4.245 3.86Zm8.218-1.223a.75.75 0 0 1 1.06 0c4.296 4.296 4.296 11.26 0 15.556a.75.75 0 0 1-1.06-1.06a9.5 9.5 0 0 0 0-13.436a.75.75 0 0 1 0-1.06"/><path fill="currentColor" d="M16.243 7.757a.75.75 0 1 0-1.061 1.061a4.5 4.5 0 0 1 0 6.364a.75.75 0 0 0 1.06 1.06a6 6 0 0 0 0-8.485Z"/></svg>`;
+        const muteSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M11.553 3.064A.75.75 0 0 1 12 3.75v16.5a.75.75 0 0 1-1.255.555L5.46 16H2.75A1.75 1.75 0 0 1 1 14.25v-4.5C1 8.784 1.784 8 2.75 8h2.71l5.285-4.805a.75.75 0 0 1 .808-.13ZM10.5 5.445l-4.245 3.86a.75.75 0 0 1-.505.195h-3a.25.25 0 0 0-.25.25v4.5c0 .138.112.25.25.25h3c.187 0 .367.069.505.195l4.245 3.86Zm8.218-1.223a.75.75 0 0 1 1.06 0c4.296 4.296 4.296 11.26 0 15.556a.75.75 0 0 1-1.06-1.06a9.5.9.5 0 0 0 0-13.436a.75.75 0 0 1 0-1.06"/><path fill="currentColor" d="M16.243 7.757a.75.75 0 1 0-1.061 1.061a4.5 4.5 0 0 1 0 6.364a.75.75 0 0 0 1.06 1.06a6 6 0 0 0 0-8.485Z"/></svg>`;
 
         const playPauseBtn = document.getElementById('playPauseBtn');
         const muteBtn = document.getElementById('muteBtn');
@@ -579,7 +579,8 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     const sourceWrapper = root.querySelector('.playlist-source');
     if (!sourceWrapper) return;
 
-    const articles = [...sourceWrapper.querySelectorAll('article[data-src]')];
+    // Include ALL articles, not just those with data-src
+    const articles = [...sourceWrapper.querySelectorAll('article')];
     if (!articles.length) return;
 
     const items = articles.map((art, i) => {
@@ -592,9 +593,18 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
             title,
             short,
             description,
-            src: art.dataset.src
+            src: art.dataset.src || null,
+            customThumb: art.dataset.thumb || null,
+            disabled: !art.dataset.src || art.dataset.src.trim() === ''
         };
     });
+
+    // Find first enabled item for initial selection
+    const firstEnabledIndex = items.findIndex(item => !item.disabled);
+    if (firstEnabledIndex === -1) {
+        console.warn('No enabled videos found in playlist');
+        return;
+    }
 
     root.dataset.enhanced = 'true';
 
@@ -625,7 +635,7 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     const descEl = main.querySelector('.video-description');
     const listEl = side.querySelector('.video-playlist-list');
 
-    const state = { currentIndex: 0, items };
+    const state = { currentIndex: firstEnabledIndex, items };
 
     // Define color pool for circles
     const colorPool = ['#009cde', '#26d07c', '#f277c6', '#9063cd', '#ffda00'];
@@ -650,25 +660,46 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
         listEl.innerHTML = '';
         state.items.forEach((item, idx) => {
             const li = document.createElement('div');
-            li.className = 'playlist-item' + (idx === state.currentIndex ? ' active' : '');
+            const isActive = idx === state.currentIndex;
+            const isDisabled = item.disabled;
+
+            // Build class list
+            let className = 'playlist-item';
+            if (isActive) className += ' active';
+            if (isDisabled) className += ' disabled';
+
+            li.className = className;
             li.setAttribute('role', 'option');
-            li.setAttribute('aria-selected', idx === state.currentIndex ? 'true' : 'false');
+            li.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            li.setAttribute('aria-disabled', isDisabled ? 'true' : 'false');
             li.dataset.index = String(idx);
+
             // Transparent 1x1 gif as placeholder
             const blank = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
             li.innerHTML = `
-                        <div class="playlist-thumb loading">
-                            <img loading="lazy" src="${blank}" data-video-thumb="${item.src}" alt="${item.title}">
+                        <div class="playlist-thumb ${isDisabled ? 'disabled' : 'loading'}">
+                            <img loading="lazy" src="${item.customThumb || blank}" ${!isDisabled && !item.customThumb ? `data-video-thumb="${item.src}"` : ''} alt="${item.title}">
                         </div>
                         <div class="playlist-meta">
                             <div class="playlist-meta-title">${item.title}</div>
                             <div class="playlist-meta-desc">${item.short || ''}</div>
                         </div>
-                        <button type="button" aria-label="Play ${item.title}"></button>
+                        <button type="button" aria-label="${isDisabled ? 'Video not available' : `Play ${item.title}`}" ${isDisabled ? 'disabled' : ''}></button>
                     `;
-            li.addEventListener('click', () => selectIndex(idx, true));
+
+            // Only add click handler for enabled items
+            if (!isDisabled) {
+                li.addEventListener('click', () => selectIndex(idx, true));
+                li.style.cursor = 'pointer';
+            } else {
+                li.style.cursor = 'not-allowed';
+            }
+
             listEl.appendChild(li);
         });
+
+        // Only generate thumbnails for enabled items
         generateThumbnails(listEl);
     }
 
@@ -682,7 +713,8 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
 
     function loadCurrent(autoplay) {
         const item = state.items[state.currentIndex];
-        if (!item) return;
+        if (!item || item.disabled) return;
+
         if (videoEl.src !== item.src) videoEl.src = item.src;
         titleEl.textContent = item.title;
         descEl.textContent = item.description || '';
@@ -694,7 +726,9 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     }
 
     function selectIndex(idx, autoplay) {
-        if (idx < 0 || idx >= state.items.length || idx === state.currentIndex) return;
+        const item = state.items[idx];
+        if (idx < 0 || idx >= state.items.length || idx === state.currentIndex || !item || item.disabled) return;
+
         state.currentIndex = idx;
         updateColors(); // Update colors when video changes
         loadCurrent(autoplay);
@@ -704,7 +738,7 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     updateColors(); // Set initial colors
     loadCurrent(options.autoplayFirst === true);
 
-    // Thumbnail generation from video first frame
+    // Thumbnail generation from video first frame (only for enabled items)
     function generateThumbnails(container) {
         const imgNodes = [...container.querySelectorAll('img[data-video-thumb]')];
         imgNodes.forEach(img => {

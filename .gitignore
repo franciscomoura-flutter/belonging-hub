@@ -72,3 +72,10 @@ node_modules/
 .DS_Store
 .DS_Store?
 ._*
+
+# Video files (too large for GitHub)
+public/assets/video/
+*.mp4
+*.mov
+*.avi
+*.mkv

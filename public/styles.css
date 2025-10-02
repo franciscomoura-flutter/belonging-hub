@@ -583,6 +583,34 @@ html.app-loaded .app-loader {
     background: #8f63cd1b;
 }
 
+.playlist-item.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.playlist-item.disabled .playlist-thumb {
+    background-color: #f0f0f0;
+}
+
+.playlist-item.disabled .playlist-thumb.disabled {
+    /* Remove loading state for disabled items */
+    background-color: #e0e0e0;
+}
+
+.playlist-item.disabled .playlist-meta-title,
+.playlist-item.disabled .playlist-meta-desc {
+    color: #999;
+}
+
+.playlist-item.disabled button {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.playlist-item.disabled button:disabled {
+    pointer-events: none;
+}
+
 .playlist-thumb {
     width: 84px;
     height: 52px;
