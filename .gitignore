@@ -57,6 +57,7 @@ node_modules/
 .node_repl_history
 
 # Output of 'npm pack'
+
 *.tgz
 
 # Yarn Integrity file
@@ -79,3 +80,8 @@ public/assets/video/
 *.mov
 *.avi
 *.mkv
+
+# Excel files
+*.xlsx
+*.xls
+journey.xlsx
