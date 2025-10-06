@@ -588,14 +588,20 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
         const short = (art.querySelector('.short')?.textContent || art.dataset.short || '').trim();
         const descEl = art.querySelector('.description');
         const description = descEl ? descEl.textContent.trim() : (art.textContent || '').trim();
+
+        // Check if this is a SharePoint embed URL
+        const src = art.dataset.src || null;
+        const isSharePointEmbed = src && src.includes('sharepoint.com') && src.includes('embed.aspx');
+
         return {
             id: art.id || `video-${i}`,
             title,
             short,
             description,
-            src: art.dataset.src || null,
+            src,
             customThumb: art.dataset.thumb || null,
-            disabled: !art.dataset.src || art.dataset.src.trim() === ''
+            disabled: !src || src.trim() === '',
+            isSharePointEmbed
         };
     });
 
@@ -612,7 +618,8 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     main.className = 'video-playlist-main';
     main.innerHTML = `
                 <div class="video-wrapper">
-                    <video class="playlist-main-video" playsinline controls preload="metadata"></video>
+                    <video class="playlist-main-video" playsinline controls preload="metadata" style="display: none;"></video>
+                    <iframe class="playlist-main-iframe" frameborder="0" allowfullscreen style="display: none; width: 100%; aspect-ratio: 16/9; border-radius: 20px 20px 0 0;"></iframe>
                 </div>
                 <div class="video-playlist-info">
                     <h3 class="video-title"></h3>
@@ -631,6 +638,7 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     root.appendChild(side);
 
     const videoEl = main.querySelector('.playlist-main-video');
+    const iframeEl = main.querySelector('.playlist-main-iframe');
     const titleEl = main.querySelector('.video-title');
     const descEl = main.querySelector('.video-description');
     const listEl = side.querySelector('.video-playlist-list');
@@ -679,7 +687,7 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
 
             li.innerHTML = `
                         <div class="playlist-thumb ${isDisabled ? 'disabled' : 'loading'}">
-                            <img loading="lazy" src="${item.customThumb || blank}" ${!isDisabled && !item.customThumb ? `data-video-thumb="${item.src}"` : ''} alt="${item.title}">
+                            <img loading="lazy" src="${item.customThumb || blank}" ${!isDisabled && !item.customThumb && !item.isSharePointEmbed ? `data-video-thumb="${item.src}"` : ''} alt="${item.title}">
                         </div>
                         <div class="playlist-meta">
                             <div class="playlist-meta-title">${item.title}</div>
@@ -699,7 +707,7 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
             listEl.appendChild(li);
         });
 
-        // Only generate thumbnails for enabled items
+        // Only generate thumbnails for enabled non-SharePoint items
         generateThumbnails(listEl);
     }
 
@@ -715,11 +723,27 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
         const item = state.items[state.currentIndex];
         if (!item || item.disabled) return;
 
-        if (videoEl.src !== item.src) videoEl.src = item.src;
         titleEl.textContent = item.title;
         descEl.textContent = item.description || '';
         updateActive();
-        if (autoplay) videoEl.play().catch(() => { });
+
+        if (item.isSharePointEmbed) {
+            // Show iframe, hide video
+            videoEl.style.display = 'none';
+            iframeEl.style.display = 'block';
+            iframeEl.src = item.src;
+            // Pause any video that might be playing
+            try { videoEl.pause(); } catch { }
+        } else {
+            // Show video, hide iframe
+            iframeEl.style.display = 'none';
+            videoEl.style.display = 'block';
+            iframeEl.src = ''; // Clear iframe
+
+            if (videoEl.src !== item.src) videoEl.src = item.src;
+            if (autoplay) videoEl.play().catch(() => { });
+        }
+
         try {
             parent.postMessage({ type: 'bh-resize', height: document.documentElement.scrollHeight }, '*');
         } catch { }
@@ -738,7 +762,7 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     updateColors(); // Set initial colors
     loadCurrent(options.autoplayFirst === true);
 
-    // Thumbnail generation from video first frame (only for enabled items)
+    // Thumbnail generation from video first frame (only for enabled non-SharePoint items)
     function generateThumbnails(container) {
         const imgNodes = [...container.querySelectorAll('img[data-video-thumb]')];
         imgNodes.forEach(img => {
