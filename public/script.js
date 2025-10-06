@@ -2,6 +2,18 @@ function showMain(id) {
     // Pause any playlist videos before switching sections
     document.querySelectorAll('.playlist-main-video').forEach(v => { try { v.pause(); } catch (_) { } });
 
+    // For SharePoint iframes, store the src and reload when returning
+    document.querySelectorAll('.playlist-main-iframe').forEach(iframe => {
+        if (iframe.src && iframe.style.display !== 'none') {
+            // Store the original src if not already stored
+            if (!iframe.dataset.originalSrc) {
+                iframe.dataset.originalSrc = iframe.src;
+            }
+            // Clear src to stop playback
+            iframe.src = '';
+        }
+    });
+
     // Pause explore main card video (home section) when leaving
     const exploreVideo = document.getElementById('exploreMainVideo');
     if (exploreVideo) {
@@ -17,6 +29,14 @@ function showMain(id) {
     if (id === 'principles') {
         const root = document.getElementById('principlesPlaylist');
         if (root) enhanceVideoPlaylistFromMarkup(root, { autoplayFirst: false });
+
+        // Restore SharePoint iframe if it was the active video
+        setTimeout(() => {
+            const activeIframe = root.querySelector('.playlist-main-iframe');
+            if (activeIframe && activeIframe.dataset.originalSrc && activeIframe.style.display !== 'none') {
+                activeIframe.src = activeIframe.dataset.originalSrc;
+            }
+        }, 100);
     }
 
     // Hero video behavior
@@ -525,6 +545,22 @@ function initJourneyTabs() {
             if (!show) {
                 // Pause any media inside hidden panel
                 p.querySelectorAll('video,audio').forEach(m => { try { m.pause(); } catch { } });
+                // Store and clear SharePoint iframe src
+                p.querySelectorAll('iframe').forEach(iframe => {
+                    if (iframe.src) {
+                        if (!iframe.dataset.originalSrc) {
+                            iframe.dataset.originalSrc = iframe.src;
+                        }
+                        iframe.src = '';
+                    }
+                });
+            } else {
+                // Restore SharePoint iframe src when showing panel
+                p.querySelectorAll('iframe').forEach(iframe => {
+                    if (iframe.dataset.originalSrc && !iframe.src) {
+                        iframe.src = iframe.dataset.originalSrc;
+                    }
+                });
             }
         });
 
@@ -731,6 +767,8 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
             // Show iframe, hide video
             videoEl.style.display = 'none';
             iframeEl.style.display = 'block';
+            // Store original src for later restoration
+            iframeEl.dataset.originalSrc = item.src;
             iframeEl.src = item.src;
             // Pause any video that might be playing
             try { videoEl.pause(); } catch { }
@@ -738,7 +776,9 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
             // Show video, hide iframe
             iframeEl.style.display = 'none';
             videoEl.style.display = 'block';
-            iframeEl.src = ''; // Clear iframe
+            // Clear iframe and its stored src
+            iframeEl.src = '';
+            iframeEl.dataset.originalSrc = '';
 
             if (videoEl.src !== item.src) videoEl.src = item.src;
             if (autoplay) videoEl.play().catch(() => { });
@@ -752,6 +792,20 @@ function enhanceVideoPlaylistFromMarkup(root, options = {}) {
     function selectIndex(idx, autoplay) {
         const item = state.items[idx];
         if (idx < 0 || idx >= state.items.length || idx === state.currentIndex || !item || item.disabled) return;
+
+        // Stop current media before switching
+        if (state.items[state.currentIndex]) {
+            const currentItem = state.items[state.currentIndex];
+            if (currentItem.isSharePointEmbed) {
+                // Store src before clearing for SharePoint videos
+                if (!iframeEl.dataset.originalSrc) {
+                    iframeEl.dataset.originalSrc = iframeEl.src;
+                }
+                iframeEl.src = '';
+            } else {
+                try { videoEl.pause(); } catch { }
+            }
+        }
 
         state.currentIndex = idx;
         updateColors(); // Update colors when video changes
