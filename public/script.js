@@ -33,10 +33,50 @@ function showMain(id) {
         }
     });
 
-    // Pause explore main card video (home section) when leaving
+    // Handle explore main card video/iframe differently - remove iframe completely when leaving home
     const exploreVideo = document.getElementById('exploreMainVideo');
-    if (exploreVideo) {
-        try { exploreVideo.pause(); } catch (_) { }
+    const exploreCard = document.getElementById('exploreMainCard');
+    const exploreIframe = document.querySelector('#exploreMainCard iframe');
+
+    if (id !== 'home') {
+        // Leaving home - completely remove the explore iframe
+        if (exploreVideo) {
+            try {
+                exploreVideo.pause();
+                exploreVideo.removeAttribute('controls');
+            } catch (_) { }
+        }
+        if (exploreIframe) {
+            // Store the URL for recreation
+            if (exploreIframe.dataset.originalSrc) {
+                exploreCard.dataset.exploreVideoSrc = exploreIframe.dataset.originalSrc;
+            }
+            exploreIframe.remove();
+        }
+    } else {
+        // Returning to home - recreate the explore iframe if it was SharePoint
+        if (exploreCard.dataset.exploreVideoSrc && !exploreIframe) {
+            const newIframe = document.createElement('iframe');
+            newIframe.src = exploreCard.dataset.exploreVideoSrc;
+            newIframe.frameBorder = '0';
+            newIframe.allowFullscreen = true;
+            newIframe.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; background: #000; border-radius: 20px;';
+            newIframe.dataset.originalSrc = exploreCard.dataset.exploreVideoSrc;
+
+            exploreCard.appendChild(newIframe);
+            exploreVideo.style.display = 'none';
+
+            // Re-attach click handler
+            const newClickHandler = () => {
+                newIframe.src = '';
+                setTimeout(() => {
+                    newIframe.src = newIframe.dataset.originalSrc;
+                }, 100);
+            };
+            exploreCard.removeEventListener('click', exploreCard._clickHandler);
+            exploreCard.addEventListener('click', newClickHandler);
+            exploreCard._clickHandler = newClickHandler;
+        }
     }
 
     ['home', 'journey', 'principles'].forEach(sec => {
@@ -44,12 +84,13 @@ function showMain(id) {
         if (el) el.style.display = (sec === id) ? 'flex' : 'none';
     });
 
+    // Rest of the function remains the same...
     // Principles enhancement (no autoplay)
     if (id === 'principles') {
         const root = document.getElementById('principlesPlaylist');
         if (root) enhanceVideoPlaylistFromMarkup(root, { autoplayFirst: false });
 
-        // Restore SharePoint iframe if it was the active video
+        // Restore SharePoint iframe if it was the active video (same pattern)
         setTimeout(() => {
             const activeIframe = root.querySelector('.playlist-main-iframe');
             if (activeIframe && activeIframe.dataset.originalSrc && activeIframe.style.display !== 'none') {
@@ -58,7 +99,7 @@ function showMain(id) {
         }, 100);
     }
 
-    // Hero video behavior
+    // Hero video behavior (simplified)
     if (window.heroVideo) {
         if (id === 'home') {
             window.heroUserPaused = false;
@@ -138,9 +179,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function initAppLogic() {
-        // HERO VIDEO SETUP
-        const heroVideo = document.querySelector('.hero-video video');
-        window.heroVideo = heroVideo;           // make globally accessible
+        // HERO VIDEO SETUP (reverted to original)
+        const heroVideoContainer = document.querySelector('.hero-video');
+        const heroVideo = heroVideoContainer.querySelector('video');
+        window.heroVideo = heroVideo;
+        window.heroIsIframe = false;
         window.heroUserPaused = window.heroUserPaused || false;
 
         const pauseSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M18.535 4.766c.73.27 1.215.965 1.215 1.743V17.49c0 .778-.485 1.474-1.215 1.743a4.44 4.44 0 0 1-3.07 0a1.86 1.86 0 0 1-1.215-1.743V6.51c0-.778.485-1.474 1.215-1.743a4.44 4.44 0 0 1 3.07 0M18.25 6.51a.36.36 0 0 0-.234-.335a2.94 2.94 0 0 0-2.032 0a.36.36 0 0 0-.234.335v10.98c0 .15.093.284.234.335a2.94 2.94 0 0 0 2.032 0a.36.36 0 0 0 .234-.335zM8.535 4.766c.73.27 1.215.965 1.215 1.743V17.49c0 .778-.485 1.474-1.215 1.743a4.44 4.44 0 0 1-3.07 0A1.86 1.86 0 0 1 4.25 17.49V6.51c0-.778.485-1.474 1.215-1.743a4.44 4.44 0 0 1 3.07 0M8.25 6.51a.36.36 0 0 0-.234-.335a2.94 2.94 0 0 0-2.032 0a.36.36 0 0 0-.234.335v10.98c0 .15.093.284.234.335a2.94 2.94 0 0 0 2.032 0a.36.36 0 0 0 .234-.335z" clip-rule="evenodd"/></svg>`;
@@ -154,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const muteIcon = document.getElementById('muteIcon');
 
         function setPlayPauseIcon() {
-            if (heroVideo.paused) {
+            if (window.heroVideo.paused) {
                 playPauseIcon.innerHTML = playSVG;
                 playPauseBtn.setAttribute('aria-label', 'Play');
             } else {
@@ -164,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function setMuteIcon() {
-            if (heroVideo.muted) {
+            if (window.heroVideo.muted) {
                 muteIcon.innerHTML = unmuteSVG;
                 muteBtn.setAttribute('aria-label', 'Unmute');
             } else {
@@ -174,88 +217,86 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         playPauseBtn.addEventListener('click', function () {
-            if (heroVideo.paused) {
-                heroVideo.play().catch(() => { });
+            if (window.heroVideo.paused) {
+                window.heroVideo.play().catch(() => { });
                 window.heroUserPaused = false;
             } else {
-                heroVideo.pause();
+                window.heroVideo.pause();
                 window.heroUserPaused = true;
             }
             setPlayPauseIcon();
         });
 
         muteBtn.addEventListener('click', function () {
-            heroVideo.muted = !heroVideo.muted;
+            window.heroVideo.muted = !window.heroVideo.muted;
             setMuteIcon();
         });
 
-        heroVideo.addEventListener('pause', () => {
+        window.heroVideo.addEventListener('pause', () => {
             // If not user-paused and still on home, resume (keeps looping feel)
             if (!window.heroUserPaused && document.getElementById('home').style.display !== 'none') {
-                heroVideo.play().catch(() => { });
+                window.heroVideo.play().catch(() => { });
             }
             setPlayPauseIcon();
         });
 
-        heroVideo.addEventListener('play', setPlayPauseIcon);
-        heroVideo.addEventListener('volumechange', setMuteIcon);
+        window.heroVideo.addEventListener('play', setPlayPauseIcon);
+        window.heroVideo.addEventListener('volumechange', setMuteIcon);
 
         // Initial icons
         setPlayPauseIcon();
         setMuteIcon();
 
-        // Ensure it plays on first load (muted autoplay)
+        // Ensure it plays on first load
         if (document.getElementById('home').style.display !== 'none') {
-            heroVideo.play().catch(() => { });
+            window.heroVideo.play().catch(() => { });
         }
 
+        // EXPLORE MAIN VIDEO SETUP (simplified like playlist)
         const exploreCard = document.getElementById('exploreMainCard');
-        const exploreVideo = document.getElementById('exploreMainVideo');
-        const explorePlayBtn = document.getElementById('explorePlayBtn');
+        const exploreVideoElement = document.getElementById('exploreMainVideo');
 
-        explorePlayBtn.innerHTML = playSVG;
+        // Check if explore video should be an iframe
+        const exploreVideoSrc = exploreVideoElement.querySelector('source')?.src;
+        const isExploreSharePoint = exploreVideoSrc && (exploreVideoSrc.includes('sharepoint.com') || exploreVideoSrc.includes('onedrive.live.com')) && exploreVideoSrc.includes('embed');
 
-        exploreVideo.removeAttribute('controls');
+        if (isExploreSharePoint) {
+            // Create iframe for explore video (same as playlist)
+            const exploreIframe = document.createElement('iframe');
+            exploreIframe.src = exploreVideoSrc;
+            exploreIframe.frameBorder = '0';
+            exploreIframe.allowFullscreen = true;
+            exploreIframe.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block; background: #000; border-radius: 20px;';
+            exploreIframe.dataset.originalSrc = exploreVideoSrc;
 
-        function enterPlayingState() {
-            exploreCard.classList.add('playing');
-            if (!exploreVideo.hasAttribute('controls')) {
-                exploreVideo.setAttribute('controls', 'controls');
-            }
+            exploreCard.appendChild(exploreIframe);
+            exploreVideoElement.style.display = 'none';
+
+            // Store the video src on the card for recreation
+            exploreCard.dataset.exploreVideoSrc = exploreVideoSrc;
+
+            // Simple click handler - just reload iframe
+            const clickHandler = () => {
+                exploreIframe.src = '';
+                setTimeout(() => {
+                    exploreIframe.src = exploreIframe.dataset.originalSrc;
+                }, 100);
+            };
+            exploreCard.addEventListener('click', clickHandler);
+            exploreCard._clickHandler = clickHandler; // Store reference for removal
+        } else {
+            // Regular video handling
+            exploreVideoElement.removeAttribute('controls');
+            exploreCard.addEventListener('click', () => {
+                if (exploreVideoElement.paused) {
+                    exploreVideoElement.play().catch(() => { });
+                    exploreVideoElement.setAttribute('controls', 'controls');
+                } else {
+                    exploreVideoElement.pause();
+                    exploreVideoElement.removeAttribute('controls');
+                }
+            });
         }
-
-        function leavePlayingState() {
-            exploreCard.classList.remove('playing');
-            if (exploreVideo.hasAttribute('controls')) {
-                exploreVideo.removeAttribute('controls');
-            }
-        }
-
-        exploreCard.addEventListener('click', function () {
-            if (exploreVideo.paused) {
-                exploreVideo.play().catch(() => { });
-            }
-        });
-
-        explorePlayBtn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            if (exploreVideo.paused) {
-                exploreVideo.play().catch(() => { });
-            }
-        });
-
-        exploreVideo.addEventListener('play', () => {
-            enterPlayingState();
-            if (heroVideo.paused && !window.heroUserPaused) {
-                heroVideo.play().catch(() => { });
-            }
-        });
-
-        exploreVideo.addEventListener('pause', leavePlayingState);
-        exploreVideo.addEventListener('ended', () => {
-            exploreVideo.currentTime = 0;
-            leavePlayingState();
-        });
 
         // Initialize Journey tabs
         initJourneyTabs();
