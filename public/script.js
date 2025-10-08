@@ -1,3 +1,22 @@
+document.addEventListener('DOMContentLoaded', function () {
+    // Check if page is being accessed directly (not in iframe)
+    function isInIframe() {
+        return window.self !== window.top;
+    }
+
+    // Define safe domains that can bypass iframe requirement
+    const bypassDomains = ['localhost', '127.0.0.1'];
+    const canBypass = bypassDomains.some(domain => window.location.hostname.includes(domain));
+
+    // Only show content if in iframe OR if accessing from safe domain
+    if (isInIframe() || canBypass) {
+        createSidebar();
+    } else {
+        // Hide everything if accessed directly from non-safe domain
+        document.body.style.display = 'none';
+    }
+});
+
 function showMain(id) {
     // Pause any playlist videos before switching sections
     document.querySelectorAll('.playlist-main-video').forEach(v => { try { v.pause(); } catch (_) { } });
@@ -310,13 +329,13 @@ function initJourneyCatalog() {
         download: true,
         header: true,
         complete: function (results) {
-            const data = results.data.filter(r => r.title && r.title.trim() && r.role && r.role.trim()); // More robust filtering
+            const data = results.data.filter(r => r.title && r.title.trim() && r.role && r.role.trim());
 
             // Define role mappings
             const roleMapping = {
                 'everyone': 'tab-everyone',
                 'managers': 'tab-managers',
-                'hiring managers': 'tab-hiring'
+                'hiring team': 'tab-hiring'
             };
 
             // Process each role
@@ -356,7 +375,7 @@ function initJourneyCatalog() {
 
                 // Only proceed if there are cards for this role
                 if (roleData.length === 0) {
-                    cardsWrap.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">No resources available yet for this role.</div>';
+                    cardsWrap.innerHTML = '<div style="padding: 2rem 0; color: #666;">No resources available yet for this role.</div>';
                     catalogContainer.querySelector('.tab-catalog-menu').style.display = 'none';
                     return;
                 }
@@ -406,19 +425,8 @@ function initJourneyCatalog() {
                     return acc;
                 }, {});
 
-                // Sort categories by count (descending) then alphabetically
-                const categories = Object.keys(categoryCounts).sort((a, b) => {
-                    const countA = categoryCounts[a];
-                    const countB = categoryCounts[b];
-
-                    // If counts are different, sort by count (descending)
-                    if (countA !== countB) {
-                        return countB - countA;
-                    }
-
-                    // If counts are the same, sort alphabetically
-                    return a.localeCompare(b);
-                });
+                // Sort categories alphabetically only
+                const categories = Object.keys(categoryCounts).sort((a, b) => a.localeCompare(b));
 
                 // Only create filters if there are categories for this role
                 if (categories.length > 0) {

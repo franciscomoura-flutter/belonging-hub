@@ -85,3 +85,5 @@ public/assets/video/
 *.xlsx
 *.xls
 journey.xlsx
+
+.vscode/
