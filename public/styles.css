@@ -98,11 +98,18 @@ main {
     object-fit: cover;
 }
 
+.hero-video iframe {
+    width: auto !important;
+    height: 100% !important;
+    aspect-ratio: 16/9 !important;
+    border: none;
+}
+
 .hero-overlay {
     position: absolute;
     top: 0;
     left: 0;
-    width: 85%;
+    width: 80%;
     height: 100%;
     object-fit: contain;
     z-index: 2;
@@ -124,6 +131,7 @@ main {
     height: 100%;
     padding: 4rem;
     color: #000000;
+    pointer-events: none;
 }
 
 .hero-left {
@@ -166,6 +174,7 @@ main {
     align-items: center;
     gap: 1rem;
     margin-bottom: 3rem;
+    pointer-events: auto;
 }
 
 .hero-controls button {
@@ -180,6 +189,10 @@ main {
 .hero-controls button:hover {
     color: rgba(0, 0, 0, 0.6);
     border: 2px solid rgba(0, 0, 0, 0.6);
+}
+
+.hero-controls #playPauseBtn {
+    display: none;
 }
 
 .section-title {

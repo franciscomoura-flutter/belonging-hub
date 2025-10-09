@@ -100,10 +100,35 @@ function showMain(id) {
     }
 
     // Hero video behavior (simplified)
-    if (window.heroVideo) {
+    if (window.heroIsIframe && window.heroIframe) {
+        if (id === 'home') {
+            // Restore with autoplay
+            const base = window.heroIframe.dataset.baseSrc || window.heroIframe.src || '';
+            if (base) {
+                const url = (() => {
+                    try {
+                        const u = new URL(base);
+                        u.searchParams.set('autoplay', 'true');
+                        return u.toString();
+                    } catch { return base; }
+                })();
+                window.heroIframe.src = url;
+                window.heroIframe.dataset.playing = 'true';
+            }
+        } else {
+            // Pause by clearing src
+            if (window.heroIframe.src) {
+                if (!window.heroIframe.dataset.baseSrc) {
+                    window.heroIframe.dataset.baseSrc = window.heroIframe.src;
+                }
+                window.heroIframe.src = '';
+                window.heroIframe.dataset.playing = 'false';
+            }
+        }
+    } else if (window.heroVideo) {
         if (id === 'home') {
             window.heroUserPaused = false;
-            window.heroVideo.muted = true;
+            window.heroVideo.muted = true; // Keep muted for autoplay compliance
             window.heroVideo.play().catch(() => { });
         } else {
             window.heroVideo.pause();
@@ -179,77 +204,76 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function initAppLogic() {
-        // HERO VIDEO SETUP (reverted to original)
+        // HERO VIDEO SETUP (autoplay only)
         const heroVideoContainer = document.querySelector('.hero-video');
         const heroVideo = heroVideoContainer.querySelector('video');
-        window.heroVideo = heroVideo;
-        window.heroIsIframe = false;
-        window.heroUserPaused = window.heroUserPaused || false;
+        const heroSource = heroVideo.querySelector('source');
+        let heroSrc = heroSource ? heroSource.src : '';
+        const isSharePoint = heroSrc.includes('sharepoint.com') || heroSrc.includes('onedrive.live.com');
 
-        const pauseSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M18.535 4.766c.73.27 1.215.965 1.215 1.743V17.49c0 .778-.485 1.474-1.215 1.743a4.44 4.44 0 0 1-3.07 0a1.86 1.86 0 0 1-1.215-1.743V6.51c0-.778.485-1.474 1.215-1.743a4.44 4.44 0 0 1 3.07 0M18.25 6.51a.36.36 0 0 0-.234-.335a2.94 2.94 0 0 0-2.032 0a.36.36 0 0 0-.234.335v10.98c0 .15.093.284.234.335a2.94 2.94 0 0 0 2.032 0a.36.36 0 0 0 .234-.335zM8.535 4.766c.73.27 1.215.965 1.215 1.743V17.49c0 .778-.485 1.474-1.215 1.743a4.44 4.44 0 0 1-3.07 0A1.86 1.86 0 0 1 4.25 17.49V6.51c0-.778.485-1.474 1.215-1.743a4.44 4.44 0 0 1 3.07 0M8.25 6.51a.36.36 0 0 0-.234-.335a2.94 2.94 0 0 0-2.032 0a.36.36 0 0 0-.234.335v10.98c0 .15.093.284.234.335a2.94 2.94 0 0 0 2.032 0a.36.36 0 0 0 .234-.335z" clip-rule="evenodd"/></svg>`;
-        const playSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16.394 12L10 7.737v8.526zm2.982.416L8.777 19.482A.5.5 0 0 1 8 19.066V4.934a.5.5 0 0 1 .777-.416l10.599 7.066a.5.5 0 0 1 0 .832"/></svg>`;
-        const unmuteSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3.75v16.5a.75.75 0 0 1-1.255.555L5.46 16H2.75A1.75 1.75 0 0 1 1 14.25v-4.5C1 8.784 1.784 8 2.75 8h2.71l5.285-4.805A.75.75 0 0 1 12 3.75M6.255 9.305a.75.75 0 0 1-.505.195h-3a.25.25 0 0 0-.25.25v4.5c0 .138.112.25.25.25h3c.187 0 .367.069.505.195l4.245 3.86V5.445ZM16.28 8.22a.75.75 0 1 0-1.06 1.06L17.94 12l-2.72 2.72a.75.75 0 1 0 1.06 1.06L19 13.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L20.06 12l2.72-2.72a.75.75 0 0 0-1.06-1.06L19 10.94z"/></svg>`;
-        const muteSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M11.553 3.064A.75.75 0 0 1 12 3.75v16.5a.75.75 0 0 1-1.255.555L5.46 16H2.75A1.75 1.75 0 0 1 1 14.25v-4.5C1 8.784 1.784 8 2.75 8h2.71l5.285-4.805a.75.75 0 0 1 .808-.13ZM10.5 5.445l-4.245 3.86a.75.75 0 0 1-.505.195h-3a.25.25 0 0 0-.25.25v4.5c0 .138.112.25.25.25h3c.187 0 .367.069.505.195l4.245 3.86Zm8.218-1.223a.75.75 0 0 1 1.06 0c4.296 4.296 4.296 11.26 0 15.556a.75.75 0 0 1-1.06-1.06a9.5.9.5 0 0 0 0-13.436a.75.75 0 0 1 0-1.06"/><path fill="currentColor" d="M16.243 7.757a.75.75 0 1 0-1.061 1.061a4.5 4.5 0 0 1 0 6.364a.75.75 0 0 0 1.06 1.06a6 6 0 0 0 0-8.485Z"/></svg>`;
-
+        // Hide all controls since we're removing mute functionality
         const playPauseBtn = document.getElementById('playPauseBtn');
         const muteBtn = document.getElementById('muteBtn');
-        const playPauseIcon = document.getElementById('playPauseIcon');
-        const muteIcon = document.getElementById('muteIcon');
 
-        function setPlayPauseIcon() {
-            if (window.heroVideo.paused) {
-                playPauseIcon.innerHTML = playSVG;
-                playPauseBtn.setAttribute('aria-label', 'Play');
-            } else {
-                playPauseIcon.innerHTML = pauseSVG;
-                playPauseBtn.setAttribute('aria-label', 'Pause');
-            }
+        function stripAutoplayMute(urlStr) {
+            try {
+                const u = new URL(urlStr);
+                u.searchParams.delete('autoplay');
+                u.searchParams.delete('mute');
+                u.searchParams.delete('muted');
+                return u.toString();
+            } catch { return urlStr; }
         }
 
-        function setMuteIcon() {
-            if (window.heroVideo.muted) {
-                muteIcon.innerHTML = unmuteSVG;
-                muteBtn.setAttribute('aria-label', 'Unmute');
-            } else {
-                muteIcon.innerHTML = muteSVG;
-                muteBtn.setAttribute('aria-label', 'Mute');
-            }
+        function buildUrl(base, { autoplay = true } = {}) {
+            try {
+                const u = new URL(base);
+                if (autoplay) u.searchParams.set('autoplay', 'true');
+                return u.toString();
+            } catch { return base; }
         }
 
-        playPauseBtn.addEventListener('click', function () {
-            if (window.heroVideo.paused) {
-                window.heroVideo.play().catch(() => { });
-                window.heroUserPaused = false;
-            } else {
-                window.heroVideo.pause();
-                window.heroUserPaused = true;
+        // Hide all controls
+        if (playPauseBtn) {
+            playPauseBtn.style.display = 'none';
+            playPauseBtn.onclick = null;
+        }
+        if (muteBtn) {
+            muteBtn.style.display = 'none';
+            muteBtn.onclick = null;
+        }
+
+        if (isSharePoint) {
+            // Use iframe for SharePoint - simplified
+            heroVideo.style.display = 'none';
+
+            let heroIframe = heroVideoContainer.querySelector('iframe');
+            if (!heroIframe) {
+                heroIframe = document.createElement('iframe');
+                heroIframe.frameBorder = '0';
+                heroIframe.allowFullscreen = true;
+                heroIframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
+                heroIframe.style.width = '100%';
+                heroIframe.style.height = '100%';
+                heroIframe.style.display = 'block';
+                heroIframe.style.background = '#000';
+                heroVideoContainer.appendChild(heroIframe);
             }
-            setPlayPauseIcon();
-        });
 
-        muteBtn.addEventListener('click', function () {
-            window.heroVideo.muted = !window.heroVideo.muted;
-            setMuteIcon();
-        });
+            const base = stripAutoplayMute(heroSrc);
+            heroIframe.dataset.baseSrc = base;
+            heroIframe.dataset.playing = 'true';
+            heroIframe.src = buildUrl(base, { autoplay: true });
 
-        window.heroVideo.addEventListener('pause', () => {
-            // If not user-paused and still on home, resume (keeps looping feel)
-            if (!window.heroUserPaused && document.getElementById('home').style.display !== 'none') {
-                window.heroVideo.play().catch(() => { });
-            }
-            setPlayPauseIcon();
-        });
+            window.heroIsIframe = true;
+            window.heroIframe = heroIframe;
+        } else {
+            // Local <video>: simple autoplay
+            window.heroIsIframe = false;
+            window.heroIframe = null;
 
-        window.heroVideo.addEventListener('play', setPlayPauseIcon);
-        window.heroVideo.addEventListener('volumechange', setMuteIcon);
-
-        // Initial icons
-        setPlayPauseIcon();
-        setMuteIcon();
-
-        // Ensure it plays on first load
-        if (document.getElementById('home').style.display !== 'none') {
-            window.heroVideo.play().catch(() => { });
+            // Ensure autoplay on first load (muted by HTML attrs)
+            heroVideo.play().catch(() => { });
         }
 
         // EXPLORE MAIN VIDEO SETUP (simplified like playlist)
