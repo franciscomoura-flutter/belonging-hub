@@ -295,15 +295,15 @@ main {
 }
 
 .section-explore-sub-card:nth-child(1)::after {
-    background-image: url('assets/img/Belonging at Blip Photo 10.jpg');
+    background-image: url('assets/img/Belonging%20at%20Blip%20Photo%2010.jpg');
 }
 
 .section-explore-sub-card:nth-child(2)::after {
-    background-image: url('assets/img/Belonging at Blip Photo 13.jpg');
+    background-image: url('assets/img/Belonging%20at%20Blip%20Photo%2013.jpg');
 }
 
 .section-explore-sub-card:nth-child(3)::after {
-    background-image: url('assets/img/Belonging at Blip Photo 14.jpg');
+    background-image: url('assets/img/Belonging%20at%20Blip%20Photo%2014.jpg');
 }
 
 .section-explore-sub-card:hover::after {
