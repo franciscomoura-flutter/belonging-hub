@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Belonging Hub CMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        .table-cell-max {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sortable-header:hover {
+            background-color: #f9fafb;
+        }
+
+        .draggable-field {
+            cursor: move;
+        }
+
+        .draggable-field:hover {
+            background-color: #f9fafb;
+        }
+
+        .drag-over {
+            border-top: 2px solid #3b82f6;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900" id="project-name"></h1>
+                    <span class="ml-3 text-sm text-gray-500">CMS</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="auth-user-chip" class="hidden items-center space-x-2">
+                        <span id="auth-user-email" class="text-sm text-gray-600"></span>
+                        <button id="signout-btn" onclick="window.authApp.signOut()"
+                            class="bg-gray-500 hover:bg-gray-700 text-white px-3 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-sign-out-alt mr-1"></i>Sign out
+                        </button>
+                    </div>
+                    <button onclick="window.cmsApp?.refreshView?.()"
+                        class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Auth Gate -->
+    <div id="auth-view" class="max-w-md w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div id="auth-login-block">
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">Admin Sign in</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    Only the configured admin account can sign in.
+                </p>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input id="login-email" type="email" placeholder="admin@yourdomain.com"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input id="login-password" type="password" placeholder="Enter password"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <button id="login-btn" onclick="window.authApp.signIn()"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-right-to-bracket mr-2"></i>Sign in
+                    </button>
+                    <button id="reset-btn" onclick="window.authApp.resetPassword()"
+                        class="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg">
+                        <i class="fas fa-key mr-2"></i>Forgot password
+                    </button>
+                </div>
+            </div>
+            <div id="auth-status" class="mt-4 text-sm"></div>
+        </div>
+    </div>
+
+    <!-- App -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="app" style="display: none;">
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-12">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
+            <p class="text-gray-600">Loading collections...</p>
+        </div>
+
+        <!-- Collections View -->
+        <div id="collections-view" style="display: none;">
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Collections</h2>
+                    <span id="collections-count" class="text-sm text-gray-500"></span>
+                </div>
+                <div id="collections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <!-- Add Collection -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Create New Collection</h3>
+                <div class="flex items-center space-x-3">
+                    <input type="text" id="new-collection-name" placeholder="Collection name"
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        onkeypress="if(event.key === 'Enter') window.cmsApp.createCollection()">
+                    <button onclick="window.cmsApp.createCollection()"
+                        class="bg-blue-500 hover:bg-blue-700 text-white px-6 py-2 rounded-lg whitespace-nowrap">
+                        <i class="fas fa-plus mr-2"></i>Create Collection
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection View -->
+        <div id="collection-view" style="display: none;">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <button onclick="window.cmsApp.backToCollections()"
+                            class="mr-4 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <div>
+                            <h2 id="collection-title" class="text-2xl font-bold text-gray-900"></h2>
+                        </div>
+                        <span id="document-count"
+                            class="ml-4 bg-gray-100 text-gray-800 text-sm font-medium px-2.5 py-0.5 rounded"></span>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="window.cmsApp.createNewDocument()"
+                            class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Document
+                        </button>
+                        <button onclick="window.cmsApp.showCollectionSettings()"
+                            class="bg-purple-500 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-cog mr-2"></i>Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex space-x-4">
+                    <input type="text" id="search-input" oninput="window.cmsApp.filterDocuments()"
+                        placeholder="Search documents..."
+                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <select id="search-field"
+                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">Search all fields</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Documents Table -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead id="table-head" class="bg-gray-50"></thead>
+                        <tbody id="table-body" class="bg-white divide-y divide-gray-200"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Editor -->
+        <div id="document-editor" style="display: none;">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <button onclick="window.cmsApp.backToCollection()"
+                            class="mr-4 text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <h2 id="editor-title" class="text-2xl font-bold text-gray-900">Edit Document</h2>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button onclick="window.cmsApp.saveDocument()"
+                            class="bg-green-500 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save
+                        </button>
+                        <button onclick="window.cmsApp.backToCollection()"
+                            class="bg-gray-500 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <div id="document-form" class="space-y-4"></div>
+
+                <div class="mt-8 pt-6 border-t">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Add New Field</h3>
+                    <div class="flex items-center space-x-3">
+                        <input type="text" id="new-field-name" placeholder="Field name"
+                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <select id="new-field-type"
+                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="string">String</option>
+                            <option value="number">Number</option>
+                            <option value="boolean">Boolean</option>
+                            <option value="map">Map</option>
+                            <option value="array">Array</option>
+                            <option value="null">Null</option>
+                            <option value="timestamp">Timestamp</option>
+                            <option value="geopoint">Geopoint</option>
+                            <option value="reference">Reference</option>
+                        </select>
+                        <button onclick="window.cmsApp.addNewFieldWithType()"
+                            class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg whitespace-nowrap">
+                            <i class="fas fa-plus mr-2"></i>Add Field
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection Settings Modal -->
+        <div id="collection-settings-modal"
+            class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4"
+            style="display: none;">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+                <div class="flex items-center justify-between p-6 border-b">
+                    <h3 class="text-xl font-medium text-gray-900">Collection Template Settings</h3>
+                    <button onclick="window.cmsApp.hideCollectionSettings()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 overflow-y-auto flex-1">
+                    <p class="text-sm text-gray-600 mb-6">
+                        Define the fields, their display names, types, and order for documents in this collection.
+                        Drag fields to reorder them.
+                    </p>
+
+                    <div class="mb-6">
+                        <h4 class="text-lg font-medium text-gray-900 mb-4">Field Template</h4>
+                        <div id="template-fields-list" class="space-y-2 mb-4"></div>
+                    </div>
+
+                    <div class="border-t pt-6">
+                        <h4 class="text-md font-medium text-gray-900 mb-3">Add New Field to Template</h4>
+                        <div class="grid grid-cols-4 gap-3">
+                            <input type="text" id="template-field-name" placeholder="Field name (e.g., title)"
+                                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="template-field-display" placeholder="Display name (e.g., Title)"
+                                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <select id="template-field-type"
+                                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="string">String</option>
+                                <option value="number">Number</option>
+                                <option value="boolean">Boolean</option>
+                                <option value="map">Map</option>
+                                <option value="array">Array</option>
+                                <option value="timestamp">Timestamp</option>
+                                <option value="geopoint">Geopoint</option>
+                                <option value="reference">Reference</option>
+                            </select>
+                            <button onclick="window.cmsApp.addTemplateField()"
+                                class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-plus mr-2"></i>Add
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 border-t p-6">
+                    <button onclick="window.cmsApp.hideCollectionSettings()"
+                        class="bg-gray-500 hover:bg-gray-700 text-white px-6 py-2 rounded-lg">
+                        Cancel
+                    </button>
+                    <button onclick="window.cmsApp.saveCollectionSettings()"
+                        class="bg-green-500 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
+                        <i class="fas fa-save mr-2"></i>Save Template
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="status-message" style="display: none;"
+            class="fixed bottom-4 right-4 max-w-sm w-full bg-white border-l-4 p-4 shadow-lg rounded-lg z-50">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i id="status-icon" class="fas"></i>
+                </div>
+                <div class="ml-3">
+                    <p id="status-text" class="text-sm"></p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <button onclick="window.cmsApp.hideStatus()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import {
+            getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, setDoc,
+            Timestamp, GeoPoint, deleteField, getDoc
+        } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+        import {
+            getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
+            signInWithEmailAndPassword, signOut, sendPasswordResetEmail
+        } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+        // ============================================
+        // CONFIGURATION - Change for your project
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyB289BJeYvnPOxkZcM38Z_ftaNU4SPcjXY",
+            authDomain: "belonginghub.firebaseapp.com",
+            projectId: "belonginghub",
+            storageBucket: "belonginghub.firebasestorage.app",
+            messagingSenderId: "341033605727",
+            appId: "1:341033605727:web:e33608fb0166248e4759ea"
+        };
+
+        const CMS_CONFIG = {
+            trackerCollection: 'collectionList',
+            projectName: 'Belonging Hub'
+        };
+
+        // ============================================
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const els = {
+            authView: document.getElementById('auth-view'),
+            loginBlock: document.getElementById('auth-login-block'),
+            authStatus: document.getElementById('auth-status'),
+            appRoot: document.getElementById('app'),
+            userChip: document.getElementById('auth-user-chip'),
+            userEmail: document.getElementById('auth-user-email'),
+            projectName: document.getElementById('project-name'),
+        };
+
+        let cmsStarted = false;
+
+        function setStatus(text, type = 'info') {
+            const color = type === 'error' ? 'text-red-700 bg-red-50 border-red-200'
+                : type === 'success' ? 'text-green-700 bg-green-50 border-green-200'
+                    : 'text-gray-700 bg-gray-50 border-gray-200';
+            els.authStatus.className = `mt-4 text-sm px-3 py-2 rounded border ${color}`;
+            els.authStatus.textContent = text;
+        }
+
+        function showLogin() {
+            els.authView.style.display = 'block';
+            els.appRoot.style.display = 'none';
+            els.userChip.classList.add('hidden');
+        }
+
+        function showApp(user) {
+            els.authView.style.display = 'none';
+            els.appRoot.style.display = 'block';
+            els.userChip.classList.remove('hidden');
+            els.userEmail.textContent = user?.email || '';
+        }
+
+        async function ensurePersistence() {
+            try {
+                await setPersistence(auth, browserLocalPersistence);
+            } catch (e) {
+                console.warn('Failed to set auth persistence:', e);
+            }
+        }
+
+        // Fixed function to check admin status
+        async function isAuthorizedUser(user) {
+            if (!user) return false;
+
+            try {
+                const adminDoc = await getDoc(doc(db, 'cmsConfig', 'admin'));
+                if (adminDoc.exists()) {
+                    return user.uid === adminDoc.data().adminUid;
+                }
+
+                setStatus('No admin config found. Create a document at cmsConfig/admin with field adminUid set to your user UID: ' + user.uid, 'error');
+                return false;
+            } catch (e) {
+                console.error('Error checking admin status:', e);
+                setStatus('Error checking admin permissions: ' + e.message, 'error');
+                return false;
+            }
+        }
+
+        async function startCMSIfNeeded() {
+            if (cmsStarted) return;
+            window.cmsApp = new UniversalCMS();
+            await window.cmsApp.init();
+            cmsStarted = true;
+        }
+
+        window.authApp = {
+            async signIn() {
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+                setStatus('Signing in...');
+                try {
+                    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+                    // Check admin status after sign in
+                    const isAdmin = await isAuthorizedUser(userCredential.user);
+                    if (!isAdmin) {
+                        await signOut(auth);
+                        setStatus(`Not authorized as admin. Your UID: ${userCredential.user.uid}`, 'error');
+                        return;
+                    }
+
+                    setStatus('Signed in as admin.', 'success');
+                } catch (e) {
+                    setStatus(e.message || 'Failed to sign in.', 'error');
+                }
+            },
+
+            async resetPassword() {
+                const email = document.getElementById('login-email').value.trim();
+                if (!email) { setStatus('Enter the admin email to reset password.', 'error'); return; }
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    setStatus('Password reset email sent.', 'success');
+                } catch (e) {
+                    setStatus(e.message || 'Failed to send reset email.', 'error');
+                }
+            },
+
+            async signOut() {
+                try {
+                    await signOut(auth);
+                    setStatus('Signed out.', 'success');
+                    cmsStarted = false;
+                    showLogin();
+                } catch (e) {
+                    setStatus(e.message || 'Failed to sign out.', 'error');
+                }
+            }
+        };
+
+        (async function boot() {
+            els.projectName.textContent = CMS_CONFIG.projectName;
+            await ensurePersistence();
+
+            onAuthStateChanged(auth, async (user) => {
+                if (!user) {
+                    showLogin();
+                    return;
+                }
+
+                // Check admin status on each auth state change
+                const isAdmin = await isAuthorizedUser(user);
+                if (!isAdmin) {
+                    await signOut(auth);
+                    showLogin();
+                    return;
+                }
+
+                setStatus('');
+                showApp(user);
+                await startCMSIfNeeded();
+                await window.cmsApp.refreshView();
+            });
+        })();
+
+        // ============================================
+        // CMS implementation (unchanged features)
+        // ============================================
+        class UniversalCMS {
+            constructor() {
+                this.collections = [];
+                this.documents = [];
+                this.filteredDocuments = [];
+                this.availableFields = [];
+                this.documentForm = {};
+                this.fieldTypes = {};
+                this.currentDocument = null;
+                this.currentCollection = null;
+                this.isNewDocument = false;
+                this.currentSortField = null;
+                this.currentSortOrder = null;
+                this.originalDocumentFields = new Set();
+                this.fieldsToDelete = new Set();
+                this.collectionTemplate = null;
+                this.templateFields = [];
+                this.draggedFieldIndex = null;
+            }
+
+            async init() {
+                document.getElementById('project-name').textContent = CMS_CONFIG.projectName;
+                await this.loadCollections();
+            }
+
+            async loadCollections() {
+                try {
+                    const querySnapshot = await getDocs(collection(db, CMS_CONFIG.trackerCollection));
+                    this.collections = [];
+                    const collectionsToRemove = [];
+
+                    for (const docSnap of querySnapshot.docs) {
+                        const data = docSnap.data();
+
+                        try {
+                            const collectionSnapshot = await getDocs(collection(db, data.name));
+
+                            if (collectionSnapshot.empty) {
+                                // Collection is empty - mark for removal from tracker
+                                collectionsToRemove.push(docSnap.id);
+                                continue;
+                            }
+
+                            const count = collectionSnapshot.docs.filter(d => !d.data()._placeholder).length;
+
+                            this.collections.push({
+                                id: docSnap.id,
+                                name: data.name,
+                                count: count,
+                                totalDocs: collectionSnapshot.docs.length,
+                                createdAt: data.createdAt,
+                                template: data.template || null
+                            });
+                        } catch (error) {
+                            // Collection doesn't exist or access error - mark for removal
+                            collectionsToRemove.push(docSnap.id);
+                        }
+                    }
+
+                    // Clean up orphaned tracker entries
+                    for (const collectionId of collectionsToRemove) {
+                        try {
+                            await deleteDoc(doc(db, CMS_CONFIG.trackerCollection, collectionId));
+                            console.log(`Cleaned up orphaned tracker entry: ${collectionId}`);
+                        } catch (error) {
+                            console.error(`Error cleaning up tracker entry ${collectionId}:`, error);
+                        }
+                    }
+
+                    this.renderCollections();
+                } catch (error) {
+                    if (error.code === 'permission-denied' || (error.message || '').includes('Missing or insufficient permissions')) {
+                        await this.initializeTrackerCollection();
+                    } else {
+                        this.showStatus('Error loading collections: ' + error.message, 'error');
+                    }
+                }
+            }
+
+            async initializeTrackerCollection() {
+                try {
+                    this.showStatus('Initializing collection tracker...', 'info');
+
+                    await setDoc(doc(db, CMS_CONFIG.trackerCollection, 'welcome'), {
+                        name: 'welcome',
+                        createdAt: new Date().toISOString(),
+                        _isWelcome: true
+                    });
+
+                    this.showStatus('Collection tracker initialized successfully!');
+                    await this.loadCollections();
+                } catch (error) {
+                    this.showStatus('Error initializing tracker: ' + error.message, 'error');
+                }
+            }
+
+            renderCollections() {
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('collections-view').style.display = 'block';
+
+                document.getElementById('collections-count').textContent =
+                    `${this.collections.length} ${this.collections.length === 1 ? 'collection' : 'collections'}`;
+
+                const grid = document.getElementById('collections-grid');
+
+                if (this.collections.length === 0) {
+                    grid.innerHTML = `
+                        <div class="col-span-3 text-center py-12">
+                            <i class="fas fa-database text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-600 mb-4">No collections yet</p>
+                            <p class="text-sm text-gray-500">Create your first collection below to get started</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = this.collections.map(coll => `
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border"
+                         onclick="window.cmsApp.selectCollection('${coll.id}')">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-database text-blue-500 text-2xl mr-3"></i>
+                                <h3 class="text-lg font-medium text-gray-900">${coll.name}</h3>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                ${coll.template ? '<i class="fas fa-check-circle text-green-500" title="Template configured"></i>' : ''}
+                                <span class="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                                    ${coll.count}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-blue-600 text-sm font-medium">View Collection →</span>
+                            <span class="text-xs text-gray-400">
+                                ${coll.createdAt ? new Date(coll.createdAt).toLocaleDateString() : ''}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            async createCollection() {
+                const name = document.getElementById('new-collection-name').value.trim();
+
+                if (!name) {
+                    this.showStatus('Please enter a collection name', 'error');
+                    return;
+                }
+
+                if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)) {
+                    this.showStatus('Collection name must start with a letter and contain only letters, numbers, and underscores', 'error');
+                    return;
+                }
+
+                if (this.collections.find(c => c.name === name)) {
+                    this.showStatus('Collection already exists', 'error');
+                    return;
+                }
+
+                try {
+                    await addDoc(collection(db, CMS_CONFIG.trackerCollection), {
+                        name: name,
+                        createdAt: new Date().toISOString(),
+                        template: null
+                    });
+
+                    await addDoc(collection(db, name), {
+                        _placeholder: true,
+                        createdAt: new Date().toISOString(),
+                        createdBy: 'CMS'
+                    });
+
+                    document.getElementById('new-collection-name').value = '';
+
+                    this.showStatus('Collection created successfully!');
+                    await this.loadCollections();
+                } catch (error) {
+                    this.showStatus('Error creating collection: ' + error.message, 'error');
+                }
+            }
+
+            async selectCollection(collectionId) {
+                const collInfo = this.collections.find(c => c.id === collectionId);
+                if (!collInfo) return;
+
+                this.currentCollection = collInfo;
+                this.collectionTemplate = collInfo.template;
+                this.currentSortField = null;
+                this.currentSortOrder = null;
+
+                document.getElementById('collections-view').style.display = 'none';
+                document.getElementById('loading-state').style.display = 'block';
+
+                try {
+                    const querySnapshot = await getDocs(collection(db, collInfo.name));
+                    this.documents = [];
+                    const allFields = new Set();
+
+                    // Check if collection actually has any documents
+                    if (querySnapshot.empty) {
+                        // Collection is empty - remove from tracker and go back
+                        await this.removeCollectionFromTracker();
+                        this.showStatus('Collection was empty and has been removed.', 'info');
+                        this.backToCollections();
+                        await this.loadCollections();
+                        return;
+                    }
+
+                    querySnapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+                        this.documents.push({
+                            id: docSnap.id,
+                            data: data,
+                            isPlaceholder: data._placeholder === true
+                        });
+                        Object.keys(data).forEach(key => allFields.add(key));
+                    });
+
+                    this.availableFields = Array.from(allFields).sort();
+                    this.filteredDocuments = [...this.documents];
+                    this.renderCollection();
+                } catch (error) {
+                    this.showStatus('Error loading documents: ' + error.message, 'error');
+                    this.backToCollections();
+                }
+            }
+
+            renderCollection() {
+                document.getElementById('loading-state').style.display = 'none';
+                document.getElementById('collection-view').style.display = 'block';
+
+                const placeholderCount = this.documents.filter(d => d.isPlaceholder).length;
+                const realDocCount = this.documents.length - placeholderCount;
+
+                document.getElementById('collection-title').textContent = this.currentCollection.name;
+                document.getElementById('document-count').innerHTML = `
+                    ${realDocCount} documents
+                    ${placeholderCount > 0 ? `<span class="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">${placeholderCount} placeholder${placeholderCount !== 1 ? 's' : ''}</span>` : ''}
+                `;
+
+                this.renderSearchOptions();
+                this.renderTable();
+            }
+
+            showCollectionSettings() {
+                this.templateFields = this.collectionTemplate ? [...this.collectionTemplate] : [];
+                this.renderTemplateFields();
+                document.getElementById('collection-settings-modal').style.display = 'flex';
+            }
+
+            hideCollectionSettings() {
+                document.getElementById('collection-settings-modal').style.display = 'none';
+            }
+
+            renderTemplateFields() {
+                const container = document.getElementById('template-fields-list');
+
+                if (this.templateFields.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-8">No fields defined yet. Add fields below.</p>';
+                    return;
+                }
+
+                container.innerHTML = this.templateFields.map((field, index) => `
+                    <div class="flex items-center space-x-3 bg-gray-50 p-4 rounded-lg border draggable-field"
+                         draggable="true"
+                         ondragstart="window.cmsApp.handleDragStart(${index})"
+                         ondragover="window.cmsApp.handleDragOver(event)"
+                         ondrop="window.cmsApp.handleDrop(${index})"
+                         ondragend="window.cmsApp.handleDragEnd()">
+                        <i class="fas fa-grip-vertical text-gray-400"></i>
+                        <div class="flex-1 grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Field Name</label>
+                                <input type="text" value="${field.name}" 
+                                       onchange="window.cmsApp.updateTemplateField(${index}, 'name', this.value)"
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Display Name</label>
+                                <input type="text" value="${field.displayName}" 
+                                       onchange="window.cmsApp.updateTemplateField(${index}, 'displayName', this.value)"
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 block mb-1">Type</label>
+                                <select onchange="window.cmsApp.updateTemplateField(${index}, 'type', this.value)"
+                                        class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                    <option value="string" ${field.type === 'string' ? 'selected' : ''}>String</option>
+                                    <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
+                                    <option value="boolean" ${field.type === 'boolean' ? 'selected' : ''}>Boolean</option>
+                                    <option value="map" ${field.type === 'map' ? 'selected' : ''}>Map</option>
+                                    <option value="array" ${field.type === 'array' ? 'selected' : ''}>Array</option>
+                                    <option value="timestamp" ${field.type === 'timestamp' ? 'selected' : ''}>Timestamp</option>
+                                    <option value="geopoint" ${field.type === 'geopoint' ? 'selected' : ''}>Geopoint</option>
+                                    <option value="reference" ${field.type === 'reference' ? 'selected' : ''}>Reference</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="window.cmsApp.removeTemplateField(${index})" 
+                                class="text-red-600 hover:text-red-900 p-2" title="Remove field">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            updateTemplateField(index, property, value) {
+                this.templateFields[index][property] = value.trim();
+            }
+
+            handleDragStart(index) {
+                this.draggedFieldIndex = index;
+                event.target.style.opacity = '0.4';
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                return false;
+            }
+
+            handleDrop(dropIndex) {
+                event.preventDefault();
+                event.target.closest('.draggable-field').classList.remove('drag-over');
+
+                if (this.draggedFieldIndex !== null && this.draggedFieldIndex !== dropIndex) {
+                    const draggedField = this.templateFields[this.draggedFieldIndex];
+                    this.templateFields.splice(this.draggedFieldIndex, 1);
+                    this.templateFields.splice(dropIndex, 0, draggedField);
+                    this.renderTemplateFields();
+                }
+            }
+
+            handleDragEnd() {
+                event.target.style.opacity = '1';
+                this.draggedFieldIndex = null;
+            }
+
+            addTemplateField() {
+                const name = document.getElementById('template-field-name').value.trim();
+                const displayName = document.getElementById('template-field-display').value.trim();
+                const type = document.getElementById('template-field-type').value;
+
+                if (!name) { this.showStatus('Please enter a field name', 'error'); return; }
+                if (!displayName) { this.showStatus('Please enter a display name', 'error'); return; }
+                if (this.templateFields.find(f => f.name === name)) { this.showStatus('Field already exists in template', 'error'); return; }
+
+                this.templateFields.push({ name, displayName, type });
+
+                document.getElementById('template-field-name').value = '';
+                document.getElementById('template-field-display').value = '';
+                document.getElementById('template-field-type').value = 'string';
+
+                this.renderTemplateFields();
+                this.showStatus(`Field "${displayName}" added to template!`);
+            }
+
+            removeTemplateField(index) {
+                if (confirm(`Remove "${this.templateFields[index].displayName}" from template?`)) {
+                    this.templateFields.splice(index, 1);
+                    this.renderTemplateFields();
+                }
+            }
+
+            async saveCollectionSettings() {
+                try {
+                    await updateDoc(doc(db, CMS_CONFIG.trackerCollection, this.currentCollection.id), {
+                        template: this.templateFields
+                    });
+
+                    this.collectionTemplate = [...this.templateFields];
+                    this.currentCollection.template = this.collectionTemplate;
+
+                    this.hideCollectionSettings();
+                    this.showStatus('Collection template saved successfully!');
+                    await this.loadCollections();
+                    this.renderTable();
+                } catch (error) {
+                    this.showStatus('Error saving template: ' + error.message, 'error');
+                }
+            }
+
+            renderSearchOptions() {
+                const searchSelect = document.getElementById('search-field');
+                searchSelect.innerHTML = '<option value="">Search all fields</option>' +
+                    this.availableFields.map(field => `<option value="${field}">${field}</option>`).join('');
+            }
+
+            getSortIcon(fieldName) {
+                if (this.currentSortField !== fieldName) return '<i class="fas fa-sort text-gray-400 ml-2"></i>';
+                return this.currentSortOrder === 'asc'
+                    ? '<i class="fas fa-sort-up text-blue-600 ml-2"></i>'
+                    : '<i class="fas fa-sort-down text-blue-600 ml-2"></i>';
+            }
+
+            getTableDisplayFields() {
+                if (this.collectionTemplate && this.collectionTemplate.length > 0) {
+                    const templateFieldNames = this.collectionTemplate.map(f => f.name);
+                    const existingTemplateFields = templateFieldNames.filter(name => this.availableFields.includes(name));
+                    if (existingTemplateFields.length < 4) {
+                        const remainingFields = this.availableFields
+                            .filter(f => !templateFieldNames.includes(f))
+                            .slice(0, 4 - existingTemplateFields.length);
+                        return [...existingTemplateFields, ...remainingFields];
+                    }
+                    return existingTemplateFields.slice(0, 4);
+                }
+                return this.availableFields.slice(0, 4);
+            }
+
+            renderTable() {
+                const tableHead = document.getElementById('table-head');
+                const tableBody = document.getElementById('table-body');
+
+                const displayFields = this.getTableDisplayFields();
+
+                tableHead.innerHTML = `
+                    <tr>
+                        ${displayFields.map(header => `
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sortable-header" 
+                                onclick="window.cmsApp.toggleSort('${header}')">
+                                <div class="flex items-center">
+                                    ${this.getDisplayName(header)}
+                                    ${this.getSortIcon(header)}
+                                </div>
+                            </th>
+                        `).join('')}
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                `;
+
+                const isLastDocument = this.filteredDocuments.length === 1;
+
+                tableBody.innerHTML = this.filteredDocuments.map(doc => `
+                    <tr class="hover:bg-gray-50 ${doc.isPlaceholder ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''}">
+                        ${displayFields.map(field => `
+                            <td class="px-6 py-4 text-sm text-gray-900 table-cell-max">
+                                ${doc.isPlaceholder && field === displayFields[0] ?
+                        '<span class="text-yellow-700 font-medium"><i class="fas fa-flag mr-1"></i>Placeholder Document</span>' :
+                        this.formatFieldValue(doc.data[field])}
+                            </td>
+                        `).join('')}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                ${!doc.isPlaceholder ? `
+                                    <button onclick="window.cmsApp.editDocument('${doc.id}')" 
+                                            class="text-blue-600 hover:text-blue-900" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="window.cmsApp.duplicateDocument('${doc.id}')" 
+                                            class="text-green-600 hover:text-green-900" title="Duplicate">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                ` : `
+                                    <span class="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">System</span>
+                                `}
+                                <button onclick="window.cmsApp.deleteDocumentWithWarning('${doc.id}', ${isLastDocument})" 
+                                        class="text-red-600 hover:text-red-900" 
+                                        title="${isLastDocument ? 'Delete (will remove collection)' : 'Delete'}">
+                                    <i class="fas fa-trash"></i>
+                                    ${isLastDocument ? '<i class="fas fa-exclamation-triangle ml-1"></i>' : ''}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            getDisplayName(fieldName) {
+                if (!this.collectionTemplate) return fieldName;
+                const templateField = this.collectionTemplate.find(f => f.name === fieldName);
+                return templateField ? templateField.displayName : fieldName;
+            }
+
+            toggleSort(fieldName) {
+                if (this.currentSortField === fieldName) {
+                    if (this.currentSortOrder === 'asc') this.currentSortOrder = 'desc';
+                    else { this.currentSortField = null; this.currentSortOrder = null; }
+                } else {
+                    this.currentSortField = fieldName;
+                    this.currentSortOrder = 'asc';
+                }
+                this.sortDocuments();
+                this.renderTable();
+            }
+
+            sortDocuments() {
+                if (!this.currentSortField || !this.currentSortOrder) {
+                    this.filteredDocuments = this.documents.filter(doc => {
+                        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                        const searchField = document.getElementById('search-field').value;
+
+                        if (!searchTerm) return true;
+
+                        if (searchField) {
+                            const fieldValue = doc.data[searchField];
+                            return fieldValue && String(fieldValue).toLowerCase().includes(searchTerm);
+                        } else {
+                            return Object.values(doc.data).some(value =>
+                                String(value).toLowerCase().includes(searchTerm)
+                            ) || doc.id.toLowerCase().includes(searchTerm);
+                        }
+                    });
+                    return;
+                }
+
+                this.filteredDocuments.sort((a, b) => {
+                    const aVal = a.data[this.currentSortField];
+                    const bVal = b.data[this.currentSortField];
+
+                    if (aVal === bVal) return 0;
+                    if (aVal === undefined || aVal === null) return 1;
+                    if (bVal === undefined || bVal === null) return -1;
+
+                    const result = aVal < bVal ? -1 : 1;
+                    return this.currentSortOrder === 'asc' ? result : -result;
+                });
+            }
+
+            formatFieldValue(value) {
+                if (value === null || value === undefined) return '<span class="text-gray-400">null</span>';
+                if (typeof value === 'boolean') return `<span class="text-${value ? 'green' : 'red'}-600">${value}</span>`;
+                if (value instanceof Date || (value && value.toDate)) {
+                    const date = value instanceof Date ? value : value.toDate();
+                    return `<span class="text-purple-600">${date.toLocaleDateString()}</span>`;
+                }
+                if (typeof value === 'object') {
+                    if (value.latitude && value.longitude) return `<span class="text-blue-600">GeoPoint</span>`;
+                    return `<span class="text-orange-600">{Object}</span>`;
+                }
+                if (Array.isArray(value)) return `<span class="text-indigo-600">[Array(${value.length})]</span>`;
+
+                const str = String(value);
+                return str.length > 30 ? str.substring(0, 30) + '...' : str;
+            }
+
+            editDocument(docId) {
+                const doc = this.documents.find(d => d.id === docId);
+                this.currentDocument = doc;
+                this.isNewDocument = false;
+                this.documentForm = { ...doc.data };
+
+                this.fieldTypes = {};
+                Object.keys(doc.data).forEach(key => {
+                    this.fieldTypes[key] = this.detectFirebaseType(doc.data[key]);
+                });
+
+                this.originalDocumentFields = new Set(Object.keys(doc.data));
+                this.fieldsToDelete = new Set();
+                this.renderDocumentEditor();
+            }
+
+            createNewDocument() {
+                this.currentDocument = null;
+                this.isNewDocument = true;
+                this.documentForm = {};
+                this.fieldTypes = {};
+
+                if (this.collectionTemplate && this.collectionTemplate.length > 0) {
+                    this.collectionTemplate.forEach(field => {
+                        this.documentForm[field.name] = this.getDefaultValueForType(field.type);
+                        this.fieldTypes[field.name] = field.type;
+                    });
+                }
+
+                this.originalDocumentFields = new Set();
+                this.fieldsToDelete = new Set();
+                this.renderDocumentEditor();
+            }
+
+            getDefaultValueForType(type) {
+                switch (type) {
+                    case 'string': return '';
+                    case 'number': return 0;
+                    case 'boolean': return false;
+                    case 'map': return {};
+                    case 'array': return [];
+                    case 'timestamp': return new Date();
+                    case 'geopoint': return { latitude: 0, longitude: 0 };
+                    case 'reference': return { path: '' };
+                    default: return '';
+                }
+            }
+
+            renderDocumentEditor() {
+                document.getElementById('collection-view').style.display = 'none';
+                document.getElementById('document-editor').style.display = 'block';
+
+                const editorTitle = document.getElementById('editor-title');
+                if (this.isNewDocument) {
+                    editorTitle.innerHTML = 'New Document';
+                } else {
+                    editorTitle.innerHTML = `
+                        Edit Document
+                        <div class="flex items-center mt-2 space-x-2">
+                            <span class="text-sm text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">
+                                ID: ${this.currentDocument.id}
+                            </span>
+                            <button onclick="window.cmsApp.copyDocumentId()" 
+                                    class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors"
+                                    title="Copy document ID">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                const form = document.getElementById('document-form');
+
+                let sortedFields;
+                if (this.collectionTemplate && this.collectionTemplate.length > 0) {
+                    const templateFieldNames = this.collectionTemplate.map(f => f.name);
+                    const extraFields = Object.keys(this.documentForm).filter(k => !templateFieldNames.includes(k)).sort();
+                    sortedFields = [...templateFieldNames.filter(name => this.documentForm.hasOwnProperty(name)), ...extraFields];
+                } else {
+                    sortedFields = Object.keys(this.documentForm).sort();
+                }
+
+                if (sortedFields.length === 0) {
+                    form.innerHTML = '<p class="text-gray-500 text-center py-8">No fields yet. Add fields using the section below.</p>';
+                } else {
+                    form.innerHTML = sortedFields.map(key => {
+                        const value = this.documentForm[key];
+                        const fieldType = this.fieldTypes[key] || this.detectFirebaseType(value);
+                        const displayName = this.getDisplayName(key);
+
+                        return `
+                            <div class="flex items-center space-x-4">
+                                <div class="w-32">
+                                    <label class="block text-sm font-medium text-gray-700">${displayName}</label>
+                                    ${displayName !== key ? `<span class="text-xs text-gray-400">(${key})</span>` : ''}
+                                </div>
+                                <div class="w-20">
+                                    <select onchange="window.cmsApp.changeFieldType('${key}', this.value)"
+                                            class="text-xs text-gray-600 border border-gray-200 rounded px-1 py-1 bg-gray-50">
+                                        <option value="string" ${fieldType === 'string' ? 'selected' : ''}>string</option>
+                                        <option value="number" ${fieldType === 'number' ? 'selected' : ''}>number</option>
+                                        <option value="boolean" ${fieldType === 'boolean' ? 'selected' : ''}>boolean</option>
+                                        <option value="map" ${fieldType === 'map' ? 'selected' : ''}>map</option>
+                                        <option value="array" ${fieldType === 'array' ? 'selected' : ''}>array</option>
+                                        <option value="null" ${fieldType === 'null' ? 'selected' : ''}>null</option>
+                                        <option value="timestamp" ${fieldType === 'timestamp' ? 'selected' : ''}>timestamp</option>
+                                        <option value="geopoint" ${fieldType === 'geopoint' ? 'selected' : ''}>geopoint</option>
+                                        <option value="reference" ${fieldType === 'reference' ? 'selected' : ''}>reference</option>
+                                    </select>
+                                </div>
+                                <div class="flex-1">
+                                    ${this.renderFormField(key, value, fieldType)}
+                                </div>
+                                <button onclick="window.cmsApp.removeField('${key}')" 
+                                        class="text-red-600 hover:text-red-900 p-2" title="Remove field">
+                                    <i class="fas fa-trash text-sm"></i>
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('new-field-name').value = '';
+                document.getElementById('new-field-type').value = 'string';
+            }
+
+            copyDocumentId() {
+                if (this.currentDocument && this.currentDocument.id) {
+                    navigator.clipboard.writeText(this.currentDocument.id).then(() => {
+                        this.showStatus('Document ID copied to clipboard!', 'success');
+                    }).catch(() => {
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = this.currentDocument.id;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        this.showStatus('Document ID copied to clipboard!', 'success');
+                    });
+                }
+            }
+
+            detectFirebaseType(value) {
+                if (value === null || value === undefined) return 'null';
+                if (typeof value === 'boolean') return 'boolean';
+                if (typeof value === 'number') return 'number';
+                if (typeof value === 'string') return 'string';
+                if (Array.isArray(value)) return 'array';
+                if (value instanceof Date || (value && value.toDate)) return 'timestamp';
+                if (value && value.latitude !== undefined && value.longitude !== undefined) return 'geopoint';
+                if (value && value.path) return 'reference';
+                if (typeof value === 'object') return 'map';
+                return 'string';
+            }
+
+            changeFieldType(key, newType) {
+                this.fieldTypes[key] = newType;
+
+                let newValue;
+                switch (newType) {
+                    case 'string': newValue = this.documentForm[key] ? String(this.documentForm[key]) : ''; break;
+                    case 'number': newValue = parseFloat(this.documentForm[key]) || 0; break;
+                    case 'boolean': newValue = Boolean(this.documentForm[key]); break;
+                    case 'map': newValue = {}; break;
+                    case 'array': newValue = []; break;
+                    case 'null': newValue = null; break;
+                    case 'timestamp': newValue = new Date(); break;
+                    case 'geopoint': newValue = { latitude: 0, longitude: 0 }; break;
+                    case 'reference': newValue = { path: '' }; break;
+                    default: newValue = '';
+                }
+
+                this.documentForm[key] = newValue;
+                this.renderDocumentEditor();
+            }
+
+            renderFormField(key, value, fieldType) {
+                switch (fieldType) {
+                    case 'boolean':
+                        return `<input type="checkbox" id="field-${key}" ${value ? 'checked' : ''} onchange="window.cmsApp.updateField('${key}', this.checked)" class="rounded text-blue-600 focus:ring-blue-500">`;
+                    case 'number':
+                        return `<input type="number" id="field-${key}" value="${value !== null && value !== undefined ? value : ''}" onchange="window.cmsApp.updateField('${key}', this.value === '' ? null : parseFloat(this.value))" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">`;
+                    case 'timestamp':
+                        const dateValue = value instanceof Date ? value.toISOString().slice(0, 16) : (value && value.toDate) ? value.toDate().toISOString().slice(0, 16) : '';
+                        return `<input type="datetime-local" id="field-${key}" value="${dateValue}" onchange="window.cmsApp.updateField('${key}', this.value === '' ? null : new Date(this.value))" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">`;
+                    case 'geopoint':
+                        const lat = value?.latitude || 0;
+                        const lng = value?.longitude || 0;
+                        return `<div class="grid grid-cols-2 gap-2"><input type="number" step="any" placeholder="Latitude" value="${lat}" onchange="window.cmsApp.updateGeopoint('${key}', 'latitude', parseFloat(this.value) || 0)" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"><input type="number" step="any" placeholder="Longitude" value="${lng}" onchange="window.cmsApp.updateGeopoint('${key}', 'longitude', parseFloat(this.value) || 0)" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></div>`;
+                    case 'array':
+                        return this.renderArrayEditor(key, value);
+                    case 'map':
+                        const mapValue = value !== null ? JSON.stringify(value, null, 2) : '';
+                        return `<textarea id="field-${key}" rows="4" placeholder="Enter JSON object or leave empty for null" onchange="window.cmsApp.updateFieldFromJSON('${key}', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm">${mapValue}</textarea>`;
+                    case 'reference':
+                        return `<input type="text" id="field-${key}" value="${value?.path || ''}" placeholder="collection/document or leave empty for null" onchange="window.cmsApp.updateField('${key}', this.value === '' ? null : {path: this.value})" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">`;
+                    case 'null':
+                        return `<span class="text-gray-500 py-2">null</span>`;
+                    default:
+                        return `<input type="text" id="field-${key}" value="${value !== null && value !== undefined ? value : ''}" onchange="window.cmsApp.updateField('${key}', this.value === '' ? null : this.value)" placeholder="Leave empty for null" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">`;
+                }
+            }
+
+            renderArrayEditor(key, value) {
+                const arrayValue = Array.isArray(value) ? value : [];
+                const arrayId = `array-${key}`;
+
+                return `
+                    <div class="space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-gray-700">Array Items</span>
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="window.cmsApp.addArrayItem('${key}')" 
+                                        class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">
+                                    <i class="fas fa-plus mr-1"></i>Add Item
+                                </button>
+                                <button type="button" onclick="window.cmsApp.toggleArrayMode('${key}')" 
+                                        class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs">
+                                    <i class="fas fa-code mr-1"></i>JSON Mode
+                                </button>
+                            </div>
+                        </div>
+                        <div id="${arrayId}-items" class="space-y-2">
+                            ${arrayValue.map((item, index) => this.renderArrayItem(key, item, index)).join('')}
+                        </div>
+                        ${arrayValue.length === 0 ? `
+                            <div class="text-center py-4 text-gray-500 text-sm">
+                                No items yet. Click "Add Item" to get started.
+                            </div>
+                        ` : ''}
+                        <div id="${arrayId}-json" style="display: none;">
+                            <textarea rows="6" placeholder="Enter JSON array" 
+                                      onchange="window.cmsApp.updateArrayFromJSON('${key}', this.value)"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm">${JSON.stringify(arrayValue, null, 2)}</textarea>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderArrayItem(fieldKey, item, index) {
+                const itemType = this.detectArrayItemType(item);
+                const itemId = `${fieldKey}-item-${index}`;
+
+                return `
+                    <div class="flex items-center space-x-2 bg-white p-3 rounded border">
+                        <div class="flex-shrink-0 w-8 text-sm text-gray-500 text-center">${index + 1}</div>
+                        <div class="flex-shrink-0">
+                            <select onchange="window.cmsApp.changeArrayItemType('${fieldKey}', ${index}, this.value)"
+                                    class="text-xs text-gray-600 border border-gray-200 rounded px-1 py-1 bg-gray-50">
+                                <option value="string" ${itemType === 'string' ? 'selected' : ''}>string</option>
+                                <option value="number" ${itemType === 'number' ? 'selected' : ''}>number</option>
+                                <option value="boolean" ${itemType === 'boolean' ? 'selected' : ''}>boolean</option>
+                                <option value="object" ${itemType === 'object' ? 'selected' : ''}>object</option>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            ${this.renderArrayItemInput(fieldKey, item, index, itemType)}
+                        </div>
+                        <div class="flex-shrink-0 flex space-x-1">
+                            <button type="button" onclick="window.cmsApp.moveArrayItem('${fieldKey}', ${index}, -1)" 
+                                    ${index === 0 ? 'disabled' : ''}
+                                    class="text-gray-400 hover:text-gray-600 disabled:opacity-30 p-1" title="Move up">
+                                <i class="fas fa-chevron-up text-xs"></i>
+                            </button>
+                            <button type="button" onclick="window.cmsApp.moveArrayItem('${fieldKey}', ${index}, 1)" 
+                                    class="text-gray-400 hover:text-gray-600 p-1" title="Move down">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                            <button type="button" onclick="window.cmsApp.removeArrayItem('${fieldKey}', ${index})" 
+                                    class="text-red-500 hover:text-red-700 p-1" title="Remove">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderArrayItemInput(fieldKey, item, index, itemType) {
+                switch (itemType) {
+                    case 'boolean':
+                        return `<input type="checkbox" ${item ? 'checked' : ''} 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.checked)" 
+                                       class="rounded text-blue-600 focus:ring-blue-500">`;
+                    case 'number':
+                        return `<input type="number" step="any" value="${item || ''}" 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, parseFloat(this.value) || 0)" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">`;
+                    case 'object':
+                        return `<textarea rows="2" 
+                                          onchange="window.cmsApp.updateArrayItemFromJSON('${fieldKey}', ${index}, this.value)"
+                                          placeholder="Enter JSON object"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-sm">${JSON.stringify(item, null, 2)}</textarea>`;
+                    default: // string
+                        return `<input type="text" value="${item || ''}" 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.value)" 
+                                       placeholder="Enter text..."
+                                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">`;
+                }
+            }
+
+            detectArrayItemType(item) {
+                if (typeof item === 'boolean') return 'boolean';
+                if (typeof item === 'number') return 'number';
+                if (typeof item === 'object' && item !== null) return 'object';
+                return 'string';
+            }
+
+            addArrayItem(fieldKey) {
+                if (!Array.isArray(this.documentForm[fieldKey])) {
+                    this.documentForm[fieldKey] = [];
+                }
+                this.documentForm[fieldKey].push('');
+                this.renderDocumentEditor();
+            }
+
+            removeArrayItem(fieldKey, index) {
+                if (Array.isArray(this.documentForm[fieldKey])) {
+                    this.documentForm[fieldKey].splice(index, 1);
+                    this.renderDocumentEditor();
+                }
+            }
+
+            moveArrayItem(fieldKey, index, direction) {
+                const array = this.documentForm[fieldKey];
+                if (!Array.isArray(array)) return;
+
+                const newIndex = index + direction;
+                if (newIndex < 0 || newIndex >= array.length) return;
+
+                const item = array.splice(index, 1)[0];
+                array.splice(newIndex, 0, item);
+                this.renderDocumentEditor();
+            }
+
+            updateArrayItem(fieldKey, index, value) {
+                if (!Array.isArray(this.documentForm[fieldKey])) {
+                    this.documentForm[fieldKey] = [];
+                }
+                this.documentForm[fieldKey][index] = value;
+            }
+
+            updateArrayItemFromJSON(fieldKey, index, jsonString) {
+                try {
+                    const parsedValue = JSON.parse(jsonString);
+                    this.updateArrayItem(fieldKey, index, parsedValue);
+                } catch (error) {
+                    this.showStatus('Invalid JSON format', 'error');
+                }
+            }
+
+            changeArrayItemType(fieldKey, index, newType) {
+                const currentValue = this.documentForm[fieldKey][index];
+                let convertedValue;
+
+                switch (newType) {
+                    case 'boolean':
+                        convertedValue = Boolean(currentValue);
+                        break;
+                    case 'number':
+                        convertedValue = parseFloat(currentValue) || 0;
+                        break;
+                    case 'object':
+                        convertedValue = typeof currentValue === 'object' ? currentValue : {};
+                        break;
+                    default: // string
+                        convertedValue = String(currentValue || '');
+                }
+
+                this.updateArrayItem(fieldKey, index, convertedValue);
+                this.renderDocumentEditor();
+            }
+
+            updateArrayFromJSON(fieldKey, jsonString) {
+                try {
+                    if (jsonString.trim() === '') {
+                        this.documentForm[fieldKey] = [];
+                    } else {
+                        const parsedArray = JSON.parse(jsonString);
+                        if (Array.isArray(parsedArray)) {
+                            this.documentForm[fieldKey] = parsedArray;
+                        } else {
+                            this.showStatus('Value must be an array', 'error');
+                            return;
+                        }
+                    }
+                    this.renderDocumentEditor();
+                } catch (error) {
+                    this.showStatus('Invalid JSON format', 'error');
+                }
+            }
+
+            toggleArrayMode(fieldKey) {
+                const itemsDiv = document.getElementById(`array-${fieldKey}-items`);
+                const jsonDiv = document.getElementById(`array-${fieldKey}-json`);
+
+                if (itemsDiv.style.display === 'none') {
+                    // Switch to item mode
+                    itemsDiv.style.display = 'block';
+                    jsonDiv.style.display = 'none';
+                } else {
+                    // Switch to JSON mode
+                    itemsDiv.style.display = 'none';
+                    jsonDiv.style.display = 'block';
+                    // Update the textarea with current array value
+                    const textarea = jsonDiv.querySelector('textarea');
+                    textarea.value = JSON.stringify(this.documentForm[fieldKey] || [], null, 2);
+                }
+            }
+
+            updateField(key, value) {
+                this.documentForm[key] = value;
+            }
+
+            updateFieldFromJSON(key, jsonString) {
+                try {
+                    if (jsonString.trim() === '') {
+                        this.documentForm[key] = null;
+                    } else {
+                        this.documentForm[key] = JSON.parse(jsonString);
+                    }
+                } catch (error) {
+                    this.showStatus('Invalid JSON format', 'error');
+                }
+            }
+
+            updateGeopoint(key, coord, value) {
+                if (!this.documentForm[key]) {
+                    this.documentForm[key] = { latitude: 0, longitude: 0 };
+                }
+                this.documentForm[key][coord] = value;
+            }
+
+            removeField(key) {
+                if (confirm(`Are you sure you want to remove the field "${key}"?`)) {
+                    delete this.documentForm[key];
+                    delete this.fieldTypes[key];
+
+                    if (this.originalDocumentFields.has(key)) {
+                        this.fieldsToDelete.add(key);
+                    }
+
+                    this.renderDocumentEditor();
+                }
+            }
+
+            addNewFieldWithType() {
+                const fieldName = document.getElementById('new-field-name').value.trim();
+                const fieldType = document.getElementById('new-field-type').value;
+
+                if (!fieldName) { this.showStatus('Please enter a field name', 'error'); return; }
+                if (this.documentForm.hasOwnProperty(fieldName)) { this.showStatus('Field already exists', 'error'); return; }
+
+                let defaultValue;
+                switch (fieldType) {
+                    case 'string': defaultValue = ''; break;
+                    case 'number': defaultValue = 0; break;
+                    case 'boolean': defaultValue = false; break;
+                    case 'map': defaultValue = {}; break;
+                    case 'array': defaultValue = []; break;
+                    case 'null': defaultValue = null; break;
+                    case 'timestamp': defaultValue = new Date(); break;
+                    case 'geopoint': defaultValue = { latitude: 0, longitude: 0 }; break;
+                    case 'reference': defaultValue = { path: '' }; break;
+                    default: defaultValue = '';
+                }
+
+                this.documentForm[fieldName] = defaultValue;
+                this.fieldTypes[fieldName] = fieldType;
+                this.fieldsToDelete.delete(fieldName);
+
+                this.renderDocumentEditor();
+                this.showStatus(`Field "${fieldName}" added successfully!`);
+            }
+
+            async saveDocument() {
+                try {
+                    const cleanData = {};
+
+                    Object.entries(this.documentForm).forEach(([key, value]) => {
+                        if (Array.isArray(value)) {
+                            // Filter out empty strings and null values from arrays
+                            const filteredArray = value.filter(item =>
+                                item !== '' && item !== null && item !== undefined
+                            );
+                            cleanData[key] = filteredArray;
+                        } else if (value instanceof Date) {
+                            cleanData[key] = Timestamp.fromDate(value);
+                        } else if (value && typeof value === 'object' && value.latitude !== undefined) {
+                            cleanData[key] = new GeoPoint(value.latitude, value.longitude);
+                        } else {
+                            cleanData[key] = value;
+                        }
+                    });
+
+                    this.fieldsToDelete.forEach(fieldName => {
+                        cleanData[fieldName] = deleteField();
+                    });
+
+                    if (this.isNewDocument) {
+                        const newDocData = {};
+                        Object.entries(cleanData).forEach(([key, value]) => {
+                            if (value !== deleteField()) newDocData[key] = value;
+                        });
+
+                        await addDoc(collection(db, this.currentCollection.name), newDocData);
+                        this.showStatus('Document created successfully!');
+                    } else {
+                        const docRef = doc(db, this.currentCollection.name, this.currentDocument.id);
+                        await updateDoc(docRef, cleanData);
+                        this.showStatus('Document updated successfully!');
+                    }
+
+                    this.backToCollection();
+                    await this.selectCollection(this.currentCollection.id);
+                } catch (error) {
+                    this.showStatus('Error saving document: ' + error.message, 'error');
+                }
+            }
+
+            async deleteDocument(docId) {
+                if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) return;
+
+                try {
+                    const docRef = doc(db, this.currentCollection.name, docId);
+                    await deleteDoc(docRef);
+
+                    // Check if this was the last document in the collection
+                    const remainingDocs = this.documents.filter(d => d.id !== docId);
+
+                    if (remainingDocs.length === 0) {
+                        // This was the last document - collection will be auto-deleted by Firestore
+                        // Remove the collection from our tracker
+                        await this.removeCollectionFromTracker();
+                        this.showStatus('Document deleted. Collection was empty and has been removed.', 'success');
+                        // Go back to collections view since this collection no longer exists
+                        this.backToCollections();
+                        await this.loadCollections();
+                    } else {
+                        this.showStatus('Document deleted successfully!');
+                        await this.selectCollection(this.currentCollection.id);
+                    }
+                } catch (error) {
+                    this.showStatus('Error deleting document: ' + error.message, 'error');
+                }
+            }
+
+            async removeCollectionFromTracker() {
+                try {
+                    const trackerDocRef = doc(db, CMS_CONFIG.trackerCollection, this.currentCollection.id);
+                    await deleteDoc(trackerDocRef);
+                } catch (error) {
+                    console.error('Error removing collection from tracker:', error);
+                    // Don't show error to user as the main operation (document deletion) succeeded
+                }
+            }
+
+            async deleteDocumentWithWarning(docId, isLastDocument) {
+                let confirmMessage = 'Are you sure you want to delete this document? This action cannot be undone.';
+
+                if (isLastDocument) {
+                    confirmMessage = `This is the last document in the collection. Deleting it will also remove the entire "${this.currentCollection.name}" collection from the CMS.\n\nAre you sure you want to proceed?`;
+                }
+
+                if (!confirm(confirmMessage)) return;
+
+                await this.deleteDocument(docId);
+            }
+
+            duplicateDocument(docId) {
+                const document = this.documents.find(d => d.id === docId);
+                this.currentDocument = null;
+                this.isNewDocument = true;
+                this.documentForm = { ...document.data };
+
+                this.fieldTypes = {};
+                Object.keys(document.data).forEach(key => {
+                    this.fieldTypes[key] = this.detectFirebaseType(document.data[key]);
+                });
+
+                this.originalDocumentFields = new Set();
+                this.fieldsToDelete = new Set();
+                this.renderDocumentEditor();
+            }
+
+            filterDocuments() {
+                const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                const searchField = document.getElementById('search-field').value;
+
+                if (!searchTerm) {
+                    this.filteredDocuments = [...this.documents];
+                } else if (searchField) {
+                    this.filteredDocuments = this.documents.filter(doc => {
+                        const fieldValue = doc.data[searchField];
+                        return fieldValue && String(fieldValue).toLowerCase().includes(searchTerm);
+                    });
+                } else {
+                    this.filteredDocuments = this.documents.filter(doc => {
+                        return Object.values(doc.data).some(value =>
+                            String(value).toLowerCase().includes(searchTerm)
+                        ) || doc.id.toLowerCase().includes(searchTerm);
+                    });
+                }
+
+                this.sortDocuments();
+                this.renderTable();
+            }
+
+            backToCollections() {
+                document.getElementById('collection-view').style.display = 'none';
+                document.getElementById('document-editor').style.display = 'none';
+                document.getElementById('collections-view').style.display = 'block';
+                this.currentCollection = null;
+            }
+
+            backToCollection() {
+                document.getElementById('document-editor').style.display = 'none';
+                document.getElementById('collection-view').style.display = 'block';
+            }
+
+            async refreshView() {
+                if (this.currentCollection) {
+                    await this.selectCollection(this.currentCollection.id);
+                } else {
+                    await this.loadCollections();
+                }
+            }
+
+            showStatus(message, type = 'success') {
+                const statusDiv = document.getElementById('status-message');
+                const statusIcon = document.getElementById('status-icon');
+                const statusText = document.getElementById('status-text');
+
+                statusIcon.className = type === 'success'
+                    ? 'fas fa-check-circle text-green-500'
+                    : type === 'info'
+                        ? 'fas fa-info-circle text-blue-500'
+                        : 'fas fa-exclamation-circle text-red-500';
+
+                statusText.className = type === 'success'
+                    ? 'text-sm text-green-800'
+                    : type === 'info'
+                        ? 'text-sm text-blue-800'
+                        : 'text-sm text-red-800';
+
+                statusText.textContent = message;
+
+                const borderColor = type === 'success' ? 'border-green-500' : type === 'info' ? 'border-blue-500' : 'border-red-500';
+                statusDiv.className = `fixed bottom-4 right-4 max-w-sm w-full bg-white border-l-4 p-4 shadow-lg rounded-lg z-50 ${borderColor}`;
+
+                statusDiv.style.display = 'block';
+
+                setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+            }
+
+            hideStatus() {
+                document.getElementById('status-message').style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>
