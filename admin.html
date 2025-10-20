@@ -271,6 +271,7 @@
                                 <option value="string">String</option>
                                 <option value="number">Number</option>
                                 <option value="boolean">Boolean</option>
+                                <option value="dropdown">Dropdown</option>
                                 <option value="map">Map</option>
                                 <option value="array">Array</option>
                                 <option value="timestamp">Timestamp</option>
@@ -754,113 +755,193 @@
                 }
 
                 container.innerHTML = this.templateFields.map((field, index) => `
-                    <div class="flex items-center space-x-3 bg-gray-50 p-4 rounded-lg border draggable-field"
+                    <div class="flex items-start space-x-3 bg-gray-50 p-4 rounded-lg border draggable-field"
                          draggable="true"
                          ondragstart="window.cmsApp.handleDragStart(${index})"
                          ondragover="window.cmsApp.handleDragOver(event)"
                          ondrop="window.cmsApp.handleDrop(${index})"
                          ondragend="window.cmsApp.handleDragEnd()">
-                        <i class="fas fa-grip-vertical text-gray-400"></i>
-                        <div class="flex-1 grid grid-cols-3 gap-4">
-                            <div>
-                                <label class="text-xs text-gray-500 block mb-1">Field Name</label>
-                                <input type="text" value="${field.name}" 
-                                       onchange="window.cmsApp.updateTemplateField(${index}, 'name', this.value)"
-                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                        <i class="fas fa-grip-vertical text-gray-400 mt-2"></i>
+                        <div class="flex-1">
+                            <div class="grid grid-cols-3 gap-4 mb-3">
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-1">Field Name</label>
+                                    <input type="text" value="${field.name}" 
+                                           onchange="window.cmsApp.updateTemplateField(${index}, 'name', this.value)"
+                                           class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-1">Display Name</label>
+                                    <input type="text" value="${field.displayName}" 
+                                           onchange="window.cmsApp.updateTemplateField(${index}, 'displayName', this.value)"
+                                           class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-1">Type</label>
+                                    <select onchange="window.cmsApp.updateTemplateFieldType(${index}, this.value)"
+                                            class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                                        <option value="string" ${field.type === 'string' ? 'selected' : ''}>String</option>
+                                        <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
+                                        <option value="boolean" ${field.type === 'boolean' ? 'selected' : ''}>Boolean</option>
+                                        <option value="dropdown" ${field.type === 'dropdown' ? 'selected' : ''}>Dropdown</option>
+                                        <option value="map" ${field.type === 'map' ? 'selected' : ''}>Map</option>
+                                        <option value="array" ${field.type === 'array' ? 'selected' : ''}>Array</option>
+                                        <option value="timestamp" ${field.type === 'timestamp' ? 'selected' : ''}>Timestamp</option>
+                                        <option value="geopoint" ${field.type === 'geopoint' ? 'selected' : ''}>Geopoint</option>
+                                        <option value="reference" ${field.type === 'reference' ? 'selected' : ''}>Reference</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div>
-                                <label class="text-xs text-gray-500 block mb-1">Display Name</label>
-                                <input type="text" value="${field.displayName}" 
-                                       onchange="window.cmsApp.updateTemplateField(${index}, 'displayName', this.value)"
-                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-500 block mb-1">Type</label>
-                                <select onchange="window.cmsApp.updateTemplateField(${index}, 'type', this.value)"
-                                        class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
-                                    <option value="string" ${field.type === 'string' ? 'selected' : ''}>String</option>
-                                    <option value="number" ${field.type === 'number' ? 'selected' : ''}>Number</option>
-                                    <option value="boolean" ${field.type === 'boolean' ? 'selected' : ''}>Boolean</option>
-                                    <option value="map" ${field.type === 'map' ? 'selected' : ''}>Map</option>
-                                    <option value="array" ${field.type === 'array' ? 'selected' : ''}>Array</option>
-                                    <option value="timestamp" ${field.type === 'timestamp' ? 'selected' : ''}>Timestamp</option>
-                                    <option value="geopoint" ${field.type === 'geopoint' ? 'selected' : ''}>Geopoint</option>
-                                    <option value="reference" ${field.type === 'reference' ? 'selected' : ''}>Reference</option>
-                                </select>
-                            </div>
+                            ${field.type === 'dropdown' ? `
+                                <div>
+                                    <label class="text-xs text-gray-500 block mb-2">Dropdown Options</label>
+                                    <div class="space-y-2 mb-3">
+                                        ${(field.options || []).map((option, optIndex) => `
+                                            <div class="flex items-center space-x-2">
+                                                <input type="text" value="${option}" 
+                                                       onchange="window.cmsApp.updateDropdownOption(${index}, ${optIndex}, this.value)"
+                                                       class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                                       placeholder="Option value">
+                                                <button type="button" onclick="window.cmsApp.removeDropdownOption(${index}, ${optIndex})"
+                                                        class="text-red-600 hover:text-red-800 p-1" title="Remove option">
+                                                    <i class="fas fa-trash text-xs"></i>
+                                                </button>
+                                            </div>
+                                        `).join('')}
+                                        ${(field.options || []).length === 0 ? `
+                                            <div class="text-gray-500 text-sm py-2">No options defined yet</div>
+                                        ` : ''}
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <input type="text" id="new-option-${index}" placeholder="New option value"
+                                               class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                               onkeypress="if(event.key === 'Enter') window.cmsApp.addDropdownOption(${index})">
+                                        <button type="button" onclick="window.cmsApp.addDropdownOption(${index})"
+                                                class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                            <i class="fas fa-plus mr-1"></i>Add
+                                        </button>
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                         <button onclick="window.cmsApp.removeTemplateField(${index})" 
-                                class="text-red-600 hover:text-red-900 p-2" title="Remove field">
+                                class="text-red-600 hover:text-red-900 p-2 mt-2" title="Remove field">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 `).join('');
             }
 
-            updateTemplateField(index, property, value) {
-                this.templateFields[index][property] = value.trim();
-            }
+            addDropdownOption(fieldIndex) {
+                const input = document.getElementById(`new-option-${fieldIndex}`);
+                const newOption = input.value.trim();
 
-            handleDragStart(index) {
-                this.draggedFieldIndex = index;
-                event.target.style.opacity = '0.4';
-            }
-
-            handleDragOver(e) {
-                e.preventDefault();
-                return false;
-            }
-
-            handleDrop(dropIndex) {
-                event.preventDefault();
-                event.target.closest('.draggable-field').classList.remove('drag-over');
-
-                if (this.draggedFieldIndex !== null && this.draggedFieldIndex !== dropIndex) {
-                    const draggedField = this.templateFields[this.draggedFieldIndex];
-                    this.templateFields.splice(this.draggedFieldIndex, 1);
-                    this.templateFields.splice(dropIndex, 0, draggedField);
-                    this.renderTemplateFields();
+                if (!newOption) {
+                    this.showStatus('Please enter an option value', 'error');
+                    return;
                 }
-            }
 
-            handleDragEnd() {
-                event.target.style.opacity = '1';
-                this.draggedFieldIndex = null;
-            }
+                if (!this.templateFields[fieldIndex].options) {
+                    this.templateFields[fieldIndex].options = [];
+                }
 
-            addTemplateField() {
-                const name = document.getElementById('template-field-name').value.trim();
-                const displayName = document.getElementById('template-field-display').value.trim();
-                const type = document.getElementById('template-field-type').value;
+                // Check for duplicates
+                if (this.templateFields[fieldIndex].options.includes(newOption)) {
+                    this.showStatus('Option already exists', 'error');
+                    return;
+                }
 
-                if (!name) { this.showStatus('Please enter a field name', 'error'); return; }
-                if (!displayName) { this.showStatus('Please enter a display name', 'error'); return; }
-                if (this.templateFields.find(f => f.name === name)) { this.showStatus('Field already exists in template', 'error'); return; }
-
-                this.templateFields.push({ name, displayName, type });
-
-                document.getElementById('template-field-name').value = '';
-                document.getElementById('template-field-display').value = '';
-                document.getElementById('template-field-type').value = 'string';
-
+                this.templateFields[fieldIndex].options.push(newOption);
+                input.value = '';
                 this.renderTemplateFields();
-                this.showStatus(`Field "${displayName}" added to template!`);
+                this.showStatus(`Option "${newOption}" added!`);
             }
 
-            removeTemplateField(index) {
-                if (confirm(`Remove "${this.templateFields[index].displayName}" from template?`)) {
-                    this.templateFields.splice(index, 1);
+            removeDropdownOption(fieldIndex, optionIndex) {
+                if (this.templateFields[fieldIndex].options && optionIndex >= 0 && optionIndex < this.templateFields[fieldIndex].options.length) {
+                    const removedOption = this.templateFields[fieldIndex].options[optionIndex];
+                    this.templateFields[fieldIndex].options.splice(optionIndex, 1);
                     this.renderTemplateFields();
+                    this.showStatus(`Option "${removedOption}" removed`);
                 }
+            }
+
+            updateDropdownOption(fieldIndex, optionIndex, newValue) {
+                const trimmedValue = newValue.trim();
+
+                if (!trimmedValue) {
+                    this.showStatus('Option value cannot be empty', 'error');
+                    this.renderTemplateFields(); // Reset the input
+                    return;
+                }
+
+                // Check for duplicates (excluding the current option)
+                const currentOptions = this.templateFields[fieldIndex].options || [];
+                const isDuplicate = currentOptions.some((opt, idx) => idx !== optionIndex && opt === trimmedValue);
+
+                if (isDuplicate) {
+                    this.showStatus('Option already exists', 'error');
+                    this.renderTemplateFields(); // Reset the input
+                    return;
+                }
+
+                if (this.templateFields[fieldIndex].options) {
+                    this.templateFields[fieldIndex].options[optionIndex] = trimmedValue;
+                }
+            }
+
+            updateTemplateField(index, property, value) {
+                if (index >= 0 && index < this.templateFields.length) {
+                    this.templateFields[index][property] = typeof value === 'string' ? value.trim() : value;
+
+                    // If changing type away from dropdown, remove options
+                    if (property === 'type' && value !== 'dropdown' && this.templateFields[index].options) {
+                        delete this.templateFields[index].options;
+                    }
+
+                    // If changing type to dropdown and no options exist, initialize empty array
+                    if (property === 'type' && value === 'dropdown' && !this.templateFields[index].options) {
+                        this.templateFields[index].options = [];
+                    }
+                }
+            }
+
+            updateTemplateFieldType(index, type) {
+                this.templateFields[index].type = type;
+                // Initialize options array for dropdown type
+                if (type === 'dropdown' && !this.templateFields[index].options) {
+                    this.templateFields[index].options = [];
+                }
+                // Remove options if changing away from dropdown
+                if (type !== 'dropdown' && this.templateFields[index].options) {
+                    delete this.templateFields[index].options;
+                }
+                this.renderTemplateFields();
             }
 
             async saveCollectionSettings() {
                 try {
-                    await updateDoc(doc(db, CMS_CONFIG.trackerCollection, this.currentCollection.id), {
-                        template: this.templateFields
+                    // Ensure template fields with options are properly structured
+                    const templateToSave = this.templateFields.map(field => {
+                        const cleanField = {
+                            name: field.name.trim(),
+                            displayName: field.displayName.trim(),
+                            type: field.type
+                        };
+
+                        // Only include options if it's a dropdown with actual options
+                        if (field.type === 'dropdown' && field.options && Array.isArray(field.options) && field.options.length > 0) {
+                            cleanField.options = field.options.filter(opt => opt && opt.trim()).map(opt => opt.trim());
+                        }
+
+                        return cleanField;
                     });
 
-                    this.collectionTemplate = [...this.templateFields];
+                    await updateDoc(doc(db, CMS_CONFIG.trackerCollection, this.currentCollection.id), {
+                        template: templateToSave
+                    });
+
+                    this.collectionTemplate = templateToSave;
                     this.currentCollection.template = this.collectionTemplate;
 
                     this.hideCollectionSettings();
@@ -1036,44 +1117,20 @@
 
                 this.fieldTypes = {};
                 Object.keys(doc.data).forEach(key => {
-                    this.fieldTypes[key] = this.detectFirebaseType(doc.data[key]);
+                    // Check if this field is defined in template first
+                    const templateField = this.collectionTemplate?.find(f => f.name === key);
+                    if (templateField) {
+                        // Use template type instead of detecting from value
+                        this.fieldTypes[key] = templateField.type;
+                    } else {
+                        // Fall back to detecting type from value for fields not in template
+                        this.fieldTypes[key] = this.detectFirebaseType(doc.data[key]);
+                    }
                 });
 
                 this.originalDocumentFields = new Set(Object.keys(doc.data));
                 this.fieldsToDelete = new Set();
                 this.renderDocumentEditor();
-            }
-
-            createNewDocument() {
-                this.currentDocument = null;
-                this.isNewDocument = true;
-                this.documentForm = {};
-                this.fieldTypes = {};
-
-                if (this.collectionTemplate && this.collectionTemplate.length > 0) {
-                    this.collectionTemplate.forEach(field => {
-                        this.documentForm[field.name] = this.getDefaultValueForType(field.type);
-                        this.fieldTypes[field.name] = field.type;
-                    });
-                }
-
-                this.originalDocumentFields = new Set();
-                this.fieldsToDelete = new Set();
-                this.renderDocumentEditor();
-            }
-
-            getDefaultValueForType(type) {
-                switch (type) {
-                    case 'string': return '';
-                    case 'number': return 0;
-                    case 'boolean': return false;
-                    case 'map': return {};
-                    case 'array': return [];
-                    case 'timestamp': return new Date();
-                    case 'geopoint': return { latitude: 0, longitude: 0 };
-                    case 'reference': return { path: '' };
-                    default: return '';
-                }
             }
 
             renderDocumentEditor() {
@@ -1118,18 +1175,25 @@
                         const fieldType = this.fieldTypes[key] || this.detectFirebaseType(value);
                         const displayName = this.getDisplayName(key);
 
+                        // Check if this field is defined in template (type enforcement)
+                        const templateField = this.collectionTemplate?.find(f => f.name === key);
+                        const isTemplateField = !!templateField;
+
                         return `
                             <div class="flex items-center space-x-4">
                                 <div class="w-32">
                                     <label class="block text-sm font-medium text-gray-700">${displayName}</label>
                                     ${displayName !== key ? `<span class="text-xs text-gray-400">(${key})</span>` : ''}
+                                    ${isTemplateField ? `<span class="text-xs text-blue-500" title="Template field - type locked"><i class="fas fa-lock"></i></span>` : ''}
                                 </div>
                                 <div class="w-20">
                                     <select onchange="window.cmsApp.changeFieldType('${key}', this.value)"
-                                            class="text-xs text-gray-600 border border-gray-200 rounded px-1 py-1 bg-gray-50">
+                                            class="text-xs text-gray-600 border border-gray-200 rounded px-1 py-1 bg-gray-50"
+                                            ${isTemplateField ? 'disabled title="Type locked by template"' : ''}>
                                         <option value="string" ${fieldType === 'string' ? 'selected' : ''}>string</option>
                                         <option value="number" ${fieldType === 'number' ? 'selected' : ''}>number</option>
                                         <option value="boolean" ${fieldType === 'boolean' ? 'selected' : ''}>boolean</option>
+                                        <option value="dropdown" ${fieldType === 'dropdown' ? 'selected' : ''}>dropdown</option>
                                         <option value="map" ${fieldType === 'map' ? 'selected' : ''}>map</option>
                                         <option value="array" ${fieldType === 'array' ? 'selected' : ''}>array</option>
                                         <option value="null" ${fieldType === 'null' ? 'selected' : ''}>null</option>
@@ -1154,6 +1218,89 @@
                 document.getElementById('new-field-type').value = 'string';
             }
 
+            removeField(key) {
+                if (confirm(`Are you sure you want to remove the field "${key}"?`)) {
+                    delete this.documentForm[key];
+                    delete this.fieldTypes[key];
+
+                    if (this.originalDocumentFields.has(key)) {
+                        this.fieldsToDelete.add(key);
+                    }
+
+                    this.renderDocumentEditor();
+                }
+            }
+
+            changeFieldType(key, newType) {
+                // Check if this field is defined in template
+                const templateField = this.collectionTemplate?.find(f => f.name === key);
+                if (templateField) {
+                    this.showStatus(`Field "${key}" type is locked by template configuration`, 'error');
+                    this.renderDocumentEditor(); // Reset the dropdown
+                    return;
+                }
+
+                this.fieldTypes[key] = newType;
+
+                let newValue;
+                switch (newType) {
+                    case 'string': newValue = this.documentForm[key] ? String(this.documentForm[key]) : ''; break;
+                    case 'number': newValue = parseFloat(this.documentForm[key]) || 0; break;
+                    case 'boolean': newValue = Boolean(this.documentForm[key]); break;
+                    case 'dropdown': newValue = ''; break;
+                    case 'map': newValue = {}; break;
+                    case 'array': newValue = []; break;
+                    case 'null': newValue = null; break;
+                    case 'timestamp': newValue = new Date(); break;
+                    case 'geopoint': newValue = { latitude: 0, longitude: 0 }; break;
+                    case 'reference': newValue = { path: '' }; break;
+                    default: newValue = '';
+                }
+
+                this.documentForm[key] = newValue;
+                this.renderDocumentEditor();
+            }
+
+            addNewFieldWithType() {
+                const fieldName = document.getElementById('new-field-name').value.trim();
+                const fieldType = document.getElementById('new-field-type').value;
+
+                if (!fieldName) { this.showStatus('Please enter a field name', 'error'); return; }
+                if (this.documentForm.hasOwnProperty(fieldName)) { this.showStatus('Field already exists', 'error'); return; }
+
+                // Check if this field name matches a template field
+                const templateField = this.collectionTemplate?.find(f => f.name === fieldName);
+                if (templateField) {
+                    // Use template type and value instead
+                    this.documentForm[fieldName] = this.getDefaultValueForType(templateField.type);
+                    this.fieldTypes[fieldName] = templateField.type;
+                    this.showStatus(`Field "${fieldName}" added using template configuration (${templateField.type})`, 'info');
+                } else {
+                    // Create field with selected type
+                    let defaultValue;
+                    switch (fieldType) {
+                        case 'string': defaultValue = ''; break;
+                        case 'number': defaultValue = 0; break;
+                        case 'boolean': defaultValue = false; break;
+                        case 'dropdown': defaultValue = ''; break;
+                        case 'map': defaultValue = {}; break;
+                        case 'array': defaultValue = []; break;
+                        case 'null': defaultValue = null; break;
+                        case 'timestamp': defaultValue = new Date(); break;
+                        case 'geopoint': defaultValue = { latitude: 0, longitude: 0 }; break;
+                        case 'reference': defaultValue = { path: '' }; break;
+                        default: defaultValue = '';
+                    }
+
+                    this.documentForm[fieldName] = defaultValue;
+                    this.fieldTypes[fieldName] = fieldType;
+                    this.showStatus(`Field "${fieldName}" added successfully!`);
+                }
+
+                this.fieldsToDelete.delete(fieldName);
+                this.renderDocumentEditor();
+            }
+
             copyDocumentId() {
                 if (this.currentDocument && this.currentDocument.id) {
                     navigator.clipboard.writeText(this.currentDocument.id).then(() => {
@@ -1175,7 +1322,11 @@
                 if (value === null || value === undefined) return 'null';
                 if (typeof value === 'boolean') return 'boolean';
                 if (typeof value === 'number') return 'number';
-                if (typeof value === 'string') return 'string';
+                if (typeof value === 'string') {
+                    // Check if this field is defined as dropdown in template
+                    // We'll let the renderFormField method handle the dropdown logic
+                    return 'string';
+                }
                 if (Array.isArray(value)) return 'array';
                 if (value instanceof Date || (value && value.toDate)) return 'timestamp';
                 if (value && value.latitude !== undefined && value.longitude !== undefined) return 'geopoint';
@@ -1184,28 +1335,41 @@
                 return 'string';
             }
 
-            changeFieldType(key, newType) {
-                this.fieldTypes[key] = newType;
+            renderFormField(key, value, fieldType) {
+                // Check if this field has template configuration for dropdown AND the current fieldType is dropdown
+                const templateField = this.collectionTemplate?.find(f => f.name === key);
+                const isDropdownWithOptions = fieldType === 'dropdown' && templateField?.type === 'dropdown' && templateField.options && templateField.options.length > 0;
 
-                let newValue;
-                switch (newType) {
-                    case 'string': newValue = this.documentForm[key] ? String(this.documentForm[key]) : ''; break;
-                    case 'number': newValue = parseFloat(this.documentForm[key]) || 0; break;
-                    case 'boolean': newValue = Boolean(this.documentForm[key]); break;
-                    case 'map': newValue = {}; break;
-                    case 'array': newValue = []; break;
-                    case 'null': newValue = null; break;
-                    case 'timestamp': newValue = new Date(); break;
-                    case 'geopoint': newValue = { latitude: 0, longitude: 0 }; break;
-                    case 'reference': newValue = { path: '' }; break;
-                    default: newValue = '';
+                if (isDropdownWithOptions) {
+                    const options = templateField.options;
+                    const selectedValue = value || '';
+
+                    return `
+                        <select id="field-${key}" onchange="window.cmsApp.updateField('${key}', this.value)"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- Select ${templateField.displayName || key} --</option>
+                            ${options.map(option => `
+                                <option value="${option}" ${selectedValue === option ? 'selected' : ''}>${option}</option>
+                            `).join('')}
+                        </select>
+                    `;
                 }
 
-                this.documentForm[key] = newValue;
-                this.renderDocumentEditor();
-            }
+                // Handle dropdown type without template options
+                if (fieldType === 'dropdown' && !isDropdownWithOptions) {
+                    return `
+                        <div class="text-orange-600 bg-orange-50 px-3 py-2 rounded border border-orange-200">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Dropdown field but no options defined in template. 
+                            <button onclick="window.cmsApp.changeFieldType('${key}', 'string')" 
+                                    class="ml-2 text-blue-600 underline text-sm">
+                                Change to string
+                            </button>
+                        </div>
+                    `;
+                }
 
-            renderFormField(key, value, fieldType) {
+                // Regular field rendering for non-dropdown fields
                 switch (fieldType) {
                     case 'boolean':
                         return `<input type="checkbox" id="field-${key}" ${value ? 'checked' : ''} onchange="window.cmsApp.updateField('${key}', this.checked)" class="rounded text-blue-600 focus:ring-blue-500">`;
@@ -1304,29 +1468,6 @@
                         </div>
                     </div>
                 `;
-            }
-
-            renderArrayItemInput(fieldKey, item, index, itemType) {
-                switch (itemType) {
-                    case 'boolean':
-                        return `<input type="checkbox" ${item ? 'checked' : ''} 
-                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.checked)" 
-                                       class="rounded text-blue-600 focus:ring-blue-500">`;
-                    case 'number':
-                        return `<input type="number" step="any" value="${item || ''}" 
-                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, parseFloat(this.value) || 0)" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">`;
-                    case 'object':
-                        return `<textarea rows="2" 
-                                          onchange="window.cmsApp.updateArrayItemFromJSON('${fieldKey}', ${index}, this.value)"
-                                          placeholder="Enter JSON object"
-                                          class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-sm">${JSON.stringify(item, null, 2)}</textarea>`;
-                    default: // string
-                        return `<input type="text" value="${item || ''}" 
-                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.value)" 
-                                       placeholder="Enter text..."
-                                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">`;
-                }
             }
 
             detectArrayItemType(item) {
@@ -1459,48 +1600,6 @@
                     this.documentForm[key] = { latitude: 0, longitude: 0 };
                 }
                 this.documentForm[key][coord] = value;
-            }
-
-            removeField(key) {
-                if (confirm(`Are you sure you want to remove the field "${key}"?`)) {
-                    delete this.documentForm[key];
-                    delete this.fieldTypes[key];
-
-                    if (this.originalDocumentFields.has(key)) {
-                        this.fieldsToDelete.add(key);
-                    }
-
-                    this.renderDocumentEditor();
-                }
-            }
-
-            addNewFieldWithType() {
-                const fieldName = document.getElementById('new-field-name').value.trim();
-                const fieldType = document.getElementById('new-field-type').value;
-
-                if (!fieldName) { this.showStatus('Please enter a field name', 'error'); return; }
-                if (this.documentForm.hasOwnProperty(fieldName)) { this.showStatus('Field already exists', 'error'); return; }
-
-                let defaultValue;
-                switch (fieldType) {
-                    case 'string': defaultValue = ''; break;
-                    case 'number': defaultValue = 0; break;
-                    case 'boolean': defaultValue = false; break;
-                    case 'map': defaultValue = {}; break;
-                    case 'array': defaultValue = []; break;
-                    case 'null': defaultValue = null; break;
-                    case 'timestamp': defaultValue = new Date(); break;
-                    case 'geopoint': defaultValue = { latitude: 0, longitude: 0 }; break;
-                    case 'reference': defaultValue = { path: '' }; break;
-                    default: defaultValue = '';
-                }
-
-                this.documentForm[fieldName] = defaultValue;
-                this.fieldTypes[fieldName] = fieldType;
-                this.fieldsToDelete.delete(fieldName);
-
-                this.renderDocumentEditor();
-                this.showStatus(`Field "${fieldName}" added successfully!`);
             }
 
             async saveDocument() {
@@ -1685,6 +1784,27 @@
 
             hideStatus() {
                 document.getElementById('status-message').style.display = 'none';
+            }
+
+            renderArrayItemInput(fieldKey, item, index, itemType) {
+                switch (itemType) {
+                    case 'boolean':
+                        return `<input type="checkbox" ${item ? 'checked' : ''} 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.checked)" 
+                                       class="rounded text-blue-600 focus:ring-blue-500">`;
+                    case 'number':
+                        return `<input type="number" value="${item}" 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, parseFloat(this.value) || 0)" 
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm">`;
+                    case 'object':
+                        return `<textarea rows="2" 
+                                         onchange="window.cmsApp.updateArrayItemFromJSON('${fieldKey}', ${index}, this.value)" 
+                                         class="w-full px-2 py-1 border border-gray-300 rounded text-sm font-mono">${JSON.stringify(item, null, 2)}</textarea>`;
+                    default: // string
+                        return `<input type="text" value="${item}" 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.value)" 
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm">`;
+                }
             }
         }
     </script>
