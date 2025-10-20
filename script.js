@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Only show content if in iframe OR if accessing from safe domain
     if (isInIframe() || canBypass) {
-        createSidebar();
+
     } else {
         // Hide everything if accessed directly from non-safe domain
         document.body.style.display = 'none';
@@ -346,6 +346,23 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function initJourneyCatalog() {
+    // Initialize Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyB289BJeYvnPOxkZcM38Z_ftaNU4SPcjXY",
+        authDomain: "belonginghub.firebaseapp.com",
+        projectId: "belonginghub",
+        storageBucket: "belonginghub.firebasestorage.app",
+        messagingSenderId: "341033605727",
+        appId: "1:341033605727:web:e33608fb0166248e4759ea"
+    };
+
+    // Initialize Firebase if not already initialized
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+    const db = firebase.firestore();
+
     // Define color pool for card circles
     const colorPool = ['#009cde', '#26d07c', '#f277c6', '#9063cd', '#ffda00'];
 
@@ -389,18 +406,29 @@ function initJourneyCatalog() {
         };
     }
 
-    // Load CSV and build catalogs for all tabs
-    Papa.parse('journey.csv', {
-        download: true,
-        header: true,
-        complete: function (results) {
-            const data = results.data.filter(r => r.title && r.title.trim() && r.role && r.role.trim());
+    // Load data from Firestore and build catalogs for all tabs
+    db.collection('YourJourney').get()
+        .then((querySnapshot) => {
+            const data = [];
+            querySnapshot.forEach((doc) => {
+                const docData = doc.data();
+                // Filter out documents with missing required fields
+                if (docData.title && docData.title.trim() && docData.role && docData.role.trim()) {
+                    data.push({
+                        title: docData.title,
+                        description: docData.description || '',
+                        url: docData.url || '',
+                        category: docData.category || 'Other',
+                        role: docData.role
+                    });
+                }
+            });
 
             // Define role mappings
             const roleMapping = {
-                'everyone': 'tab-everyone',
-                'managers': 'tab-managers',
-                'hiring team': 'tab-hiring'
+                'Everyone': 'tab-everyone',
+                'Managers': 'tab-managers',
+                'Hiring Team': 'tab-hiring'
             };
 
             // Process each role
@@ -409,8 +437,8 @@ function initJourneyCatalog() {
                 const tabPanel = document.getElementById(tabId);
                 if (!tabPanel) return;
 
-                // Filter data for this role (case-insensitive and trim whitespace)
-                const roleData = data.filter(r => r.role.toLowerCase().trim() === role);
+                // Filter data for this role (exact match, case-sensitive)
+                const roleData = data.filter(r => r.role.trim() === role);
 
                 // Create catalog structure if it doesn't exist
                 let catalogContainer = tabPanel.querySelector('.tab-catalog');
@@ -514,11 +542,20 @@ function initJourneyCatalog() {
                     catalogContainer.querySelector('.tab-catalog-menu').style.display = 'none';
                 }
             });
-        },
-        error: function (error) {
-            console.error('Error loading CSV:', error);
-        }
-    });
+        })
+        .catch((error) => {
+            console.error('Error loading data from Firestore:', error);
+            // Show error message in all tabs
+            ['tab-everyone', 'tab-managers', 'tab-hiring'].forEach(tabId => {
+                const tabPanel = document.getElementById(tabId);
+                if (tabPanel) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'padding: 2rem 0; color: #666; text-align: center;';
+                    errorDiv.textContent = 'Error loading resources. Please try again later.';
+                    tabPanel.appendChild(errorDiv);
+                }
+            });
+        });
 }
 
 function setupTabFiltering(catalogContainer, role) {
