@@ -1806,6 +1806,40 @@
                                        class="w-full px-2 py-1 border border-gray-300 rounded text-sm">`;
                 }
             }
+
+            createNewDocument() {
+                this.currentDocument = null;
+                this.isNewDocument = true;
+                this.documentForm = {};
+                this.fieldTypes = {};
+
+                if (this.collectionTemplate && this.collectionTemplate.length > 0) {
+                    this.collectionTemplate.forEach(field => {
+                        this.documentForm[field.name] = this.getDefaultValueForType(field.type);
+                        // Always use template type for template fields
+                        this.fieldTypes[field.name] = field.type;
+                    });
+                }
+
+                this.originalDocumentFields = new Set();
+                this.fieldsToDelete = new Set();
+                this.renderDocumentEditor();
+            }
+
+            getDefaultValueForType(type) {
+                switch (type) {
+                    case 'string': return '';
+                    case 'number': return 0;
+                    case 'boolean': return false;
+                    case 'dropdown': return '';
+                    case 'map': return {};
+                    case 'array': return [];
+                    case 'timestamp': return new Date();
+                    case 'geopoint': return { latitude: 0, longitude: 0 };
+                    case 'reference': return { path: '' };
+                    default: return '';
+                }
+            }
         }
     </script>
 </body>
