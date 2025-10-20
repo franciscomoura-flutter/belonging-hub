@@ -88,15 +88,19 @@ function showMain(id) {
     // Principles enhancement (no autoplay)
     if (id === 'principles') {
         const root = document.getElementById('principlesPlaylist');
-        if (root) enhanceVideoPlaylistFromMarkup(root, { autoplayFirst: false });
-
-        // Restore SharePoint iframe if it was the active video (same pattern)
-        setTimeout(() => {
-            const activeIframe = root.querySelector('.playlist-main-iframe');
-            if (activeIframe && activeIframe.dataset.originalSrc && activeIframe.style.display !== 'none') {
-                activeIframe.src = activeIframe.dataset.originalSrc;
-            }
-        }, 100);
+        if (root && !root.dataset.firebaseLoaded) {
+            // Mark as loading to prevent multiple calls
+            root.dataset.firebaseLoaded = 'true';
+            loadPrinciplesFromFirestore(root);
+        } else if (root && root.dataset.enhanced === 'true') {
+            // Already enhanced, just restore iframe if needed
+            setTimeout(() => {
+                const activeIframe = root.querySelector('.playlist-main-iframe');
+                if (activeIframe && activeIframe.dataset.originalSrc && activeIframe.style.display !== 'none') {
+                    activeIframe.src = activeIframe.dataset.originalSrc;
+                }
+            }, 100);
+        }
     }
 
     // Hero video behavior (simplified)
@@ -134,6 +138,87 @@ function showMain(id) {
             window.heroVideo.pause();
         }
     }
+}
+
+function loadPrinciplesFromFirestore(root) {
+    // Use existing Firebase instance from initJourneyCatalog
+    const db = firebase.firestore();
+
+    db.collection('BelongingPrinciples')
+        .orderBy('title') // You can change this to order by a specific field if needed
+        .get()
+        .then((querySnapshot) => {
+            const articles = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                // Include ALL documents with title, regardless of videoUrl
+                if (data.title && data.title.trim()) {
+                    articles.push({
+                        id: doc.id,
+                        title: data.title.trim(),
+                        description: data.description || '',
+                        short: data.short || '',
+                        videoUrl: data.videoUrl || '' // Empty string if no URL
+                    });
+                }
+            });
+
+            if (articles.length === 0) {
+                // Show message if no videos available
+                root.innerHTML = '<div style="padding: 2rem 0; color: #666; text-align: center;">No videos available yet. Check back soon!</div>';
+                return;
+            }
+
+            // Build the playlist structure dynamically
+            buildPrinciplesPlaylist(root, articles);
+
+            // Now enhance with existing logic (this handles disabled state automatically)
+            enhanceVideoPlaylistFromMarkup(root, { autoplayFirst: false });
+
+            // Restore SharePoint iframe if it was the active video
+            setTimeout(() => {
+                const activeIframe = root.querySelector('.playlist-main-iframe');
+                if (activeIframe && activeIframe.dataset.originalSrc && activeIframe.style.display !== 'none') {
+                    activeIframe.src = activeIframe.dataset.originalSrc;
+                }
+            }, 100);
+        })
+        .catch((error) => {
+            console.error('Error loading principles from Firestore:', error);
+            root.innerHTML = '<div style="padding: 2rem 0; color: #666; text-align: center;">Error loading videos. Please try again later.</div>';
+        });
+}
+
+function buildPrinciplesPlaylist(root, articles) {
+    // Create the playlist source structure that enhanceVideoPlaylistFromMarkup expects
+    const playlistSource = document.createElement('div');
+    playlistSource.className = 'playlist-source';
+
+    articles.forEach((article, index) => {
+        const articleEl = document.createElement('article');
+        articleEl.id = article.id;
+
+        // Set data-src only if videoUrl exists and is not empty
+        // This is key - enhanceVideoPlaylistFromMarkup checks for this to determine disabled state
+        if (article.videoUrl && article.videoUrl.trim()) {
+            articleEl.dataset.src = article.videoUrl.trim();
+        }
+        // If no videoUrl or empty, don't set data-src - this will make it disabled
+
+        articleEl.dataset.thumb = 'assets/img/video_thumbnail.png';
+
+        articleEl.innerHTML = `
+            <h4>${article.title}</h4>
+            <p class="short">${article.short}</p>
+            <p class="description">${article.description}</p>
+        `;
+
+        playlistSource.appendChild(articleEl);
+    });
+
+    // Clear existing content and add new playlist source
+    root.innerHTML = '';
+    root.appendChild(playlistSource);
 }
 
 (function () {

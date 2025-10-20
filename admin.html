@@ -220,6 +220,7 @@
                             <option value="string">String</option>
                             <option value="number">Number</option>
                             <option value="boolean">Boolean</option>
+                            <option value="dropdown">Dropdown</option>
                             <option value="map">Map</option>
                             <option value="array">Array</option>
                             <option value="null">Null</option>
@@ -832,64 +833,6 @@
                 `).join('');
             }
 
-            addDropdownOption(fieldIndex) {
-                const input = document.getElementById(`new-option-${fieldIndex}`);
-                const newOption = input.value.trim();
-
-                if (!newOption) {
-                    this.showStatus('Please enter an option value', 'error');
-                    return;
-                }
-
-                if (!this.templateFields[fieldIndex].options) {
-                    this.templateFields[fieldIndex].options = [];
-                }
-
-                // Check for duplicates
-                if (this.templateFields[fieldIndex].options.includes(newOption)) {
-                    this.showStatus('Option already exists', 'error');
-                    return;
-                }
-
-                this.templateFields[fieldIndex].options.push(newOption);
-                input.value = '';
-                this.renderTemplateFields();
-                this.showStatus(`Option "${newOption}" added!`);
-            }
-
-            removeDropdownOption(fieldIndex, optionIndex) {
-                if (this.templateFields[fieldIndex].options && optionIndex >= 0 && optionIndex < this.templateFields[fieldIndex].options.length) {
-                    const removedOption = this.templateFields[fieldIndex].options[optionIndex];
-                    this.templateFields[fieldIndex].options.splice(optionIndex, 1);
-                    this.renderTemplateFields();
-                    this.showStatus(`Option "${removedOption}" removed`);
-                }
-            }
-
-            updateDropdownOption(fieldIndex, optionIndex, newValue) {
-                const trimmedValue = newValue.trim();
-
-                if (!trimmedValue) {
-                    this.showStatus('Option value cannot be empty', 'error');
-                    this.renderTemplateFields(); // Reset the input
-                    return;
-                }
-
-                // Check for duplicates (excluding the current option)
-                const currentOptions = this.templateFields[fieldIndex].options || [];
-                const isDuplicate = currentOptions.some((opt, idx) => idx !== optionIndex && opt === trimmedValue);
-
-                if (isDuplicate) {
-                    this.showStatus('Option already exists', 'error');
-                    this.renderTemplateFields(); // Reset the input
-                    return;
-                }
-
-                if (this.templateFields[fieldIndex].options) {
-                    this.templateFields[fieldIndex].options[optionIndex] = trimmedValue;
-                }
-            }
-
             updateTemplateField(index, property, value) {
                 if (index >= 0 && index < this.templateFields.length) {
                     this.templateFields[index][property] = typeof value === 'string' ? value.trim() : value;
@@ -906,17 +849,57 @@
                 }
             }
 
-            updateTemplateFieldType(index, type) {
-                this.templateFields[index].type = type;
-                // Initialize options array for dropdown type
-                if (type === 'dropdown' && !this.templateFields[index].options) {
-                    this.templateFields[index].options = [];
+            handleDragStart(index) {
+                this.draggedFieldIndex = index;
+                event.target.style.opacity = '0.4';
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                return false;
+            }
+
+            handleDrop(dropIndex) {
+                event.preventDefault();
+                event.target.closest('.draggable-field').classList.remove('drag-over');
+
+                if (this.draggedFieldIndex !== null && this.draggedFieldIndex !== dropIndex) {
+                    const draggedField = this.templateFields[this.draggedFieldIndex];
+                    this.templateFields.splice(this.draggedFieldIndex, 1);
+                    this.templateFields.splice(dropIndex, 0, draggedField);
+                    this.renderTemplateFields();
                 }
-                // Remove options if changing away from dropdown
-                if (type !== 'dropdown' && this.templateFields[index].options) {
-                    delete this.templateFields[index].options;
-                }
+            }
+
+            handleDragEnd() {
+                event.target.style.opacity = '1';
+                this.draggedFieldIndex = null;
+            }
+
+            addTemplateField() {
+                const name = document.getElementById('template-field-name').value.trim();
+                const displayName = document.getElementById('template-field-display').value.trim();
+                const type = document.getElementById('template-field-type').value;
+
+                if (!name) { this.showStatus('Please enter a field name', 'error'); return; }
+                if (!displayName) { this.showStatus('Please enter a display name', 'error'); return; }
+                if (this.templateFields.find(f => f.name === name)) { this.showStatus('Field already exists in template', 'error'); return; }
+
+                this.templateFields.push({ name, displayName, type });
+
+                document.getElementById('template-field-name').value = '';
+                document.getElementById('template-field-display').value = '';
+                document.getElementById('template-field-type').value = 'string';
+
                 this.renderTemplateFields();
+                this.showStatus(`Field "${displayName}" added to template!`);
+            }
+
+            removeTemplateField(index) {
+                if (confirm(`Remove "${this.templateFields[index].displayName}" from template?`)) {
+                    this.templateFields.splice(index, 1);
+                    this.renderTemplateFields();
+                }
             }
 
             async saveCollectionSettings() {
@@ -1133,6 +1116,39 @@
                 this.renderDocumentEditor();
             }
 
+            createNewDocument() {
+                this.currentDocument = null;
+                this.isNewDocument = true;
+                this.documentForm = {};
+                this.fieldTypes = {};
+
+                if (this.collectionTemplate && this.collectionTemplate.length > 0) {
+                    this.collectionTemplate.forEach(field => {
+                        this.documentForm[field.name] = this.getDefaultValueForType(field.type);
+                        this.fieldTypes[field.name] = field.type;
+                    });
+                }
+
+                this.originalDocumentFields = new Set();
+                this.fieldsToDelete = new Set();
+                this.renderDocumentEditor();
+            }
+
+            getDefaultValueForType(type) {
+                switch (type) {
+                    case 'string': return '';
+                    case 'number': return 0;
+                    case 'boolean': return false;
+                    case 'dropdown': return '';
+                    case 'map': return {};
+                    case 'array': return [];
+                    case 'timestamp': return new Date();
+                    case 'geopoint': return { latitude: 0, longitude: 0 };
+                    case 'reference': return { path: '' };
+                    default: return '';
+                }
+            }
+
             renderDocumentEditor() {
                 document.getElementById('collection-view').style.display = 'none';
                 document.getElementById('document-editor').style.display = 'block';
@@ -1218,17 +1234,34 @@
                 document.getElementById('new-field-type').value = 'string';
             }
 
-            removeField(key) {
-                if (confirm(`Are you sure you want to remove the field "${key}"?`)) {
-                    delete this.documentForm[key];
-                    delete this.fieldTypes[key];
-
-                    if (this.originalDocumentFields.has(key)) {
-                        this.fieldsToDelete.add(key);
-                    }
-
-                    this.renderDocumentEditor();
+            copyDocumentId() {
+                if (this.currentDocument && this.currentDocument.id) {
+                    navigator.clipboard.writeText(this.currentDocument.id).then(() => {
+                        this.showStatus('Document ID copied to clipboard!', 'success');
+                    }).catch(() => {
+                        // Fallback for older browsers
+                        const textArea = document.createElement('textarea');
+                        textArea.value = this.currentDocument.id;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        this.showStatus('Document ID copied to clipboard!', 'success');
+                    });
                 }
+            }
+
+            detectFirebaseType(value) {
+                if (value === null || value === undefined) return 'null';
+                if (typeof value === 'boolean') return 'boolean';
+                if (typeof value === 'number') return 'number';
+                if (typeof value === 'string') return 'string';
+                if (Array.isArray(value)) return 'array';
+                if (value instanceof Date || (value && value.toDate)) return 'timestamp';
+                if (value && value.latitude !== undefined && value.longitude !== undefined) return 'geopoint';
+                if (value && value.path) return 'reference';
+                if (typeof value === 'object') return 'map';
+                return 'string';
             }
 
             changeFieldType(key, newType) {
@@ -1259,80 +1292,6 @@
 
                 this.documentForm[key] = newValue;
                 this.renderDocumentEditor();
-            }
-
-            addNewFieldWithType() {
-                const fieldName = document.getElementById('new-field-name').value.trim();
-                const fieldType = document.getElementById('new-field-type').value;
-
-                if (!fieldName) { this.showStatus('Please enter a field name', 'error'); return; }
-                if (this.documentForm.hasOwnProperty(fieldName)) { this.showStatus('Field already exists', 'error'); return; }
-
-                // Check if this field name matches a template field
-                const templateField = this.collectionTemplate?.find(f => f.name === fieldName);
-                if (templateField) {
-                    // Use template type and value instead
-                    this.documentForm[fieldName] = this.getDefaultValueForType(templateField.type);
-                    this.fieldTypes[fieldName] = templateField.type;
-                    this.showStatus(`Field "${fieldName}" added using template configuration (${templateField.type})`, 'info');
-                } else {
-                    // Create field with selected type
-                    let defaultValue;
-                    switch (fieldType) {
-                        case 'string': defaultValue = ''; break;
-                        case 'number': defaultValue = 0; break;
-                        case 'boolean': defaultValue = false; break;
-                        case 'dropdown': defaultValue = ''; break;
-                        case 'map': defaultValue = {}; break;
-                        case 'array': defaultValue = []; break;
-                        case 'null': defaultValue = null; break;
-                        case 'timestamp': defaultValue = new Date(); break;
-                        case 'geopoint': defaultValue = { latitude: 0, longitude: 0 }; break;
-                        case 'reference': defaultValue = { path: '' }; break;
-                        default: defaultValue = '';
-                    }
-
-                    this.documentForm[fieldName] = defaultValue;
-                    this.fieldTypes[fieldName] = fieldType;
-                    this.showStatus(`Field "${fieldName}" added successfully!`);
-                }
-
-                this.fieldsToDelete.delete(fieldName);
-                this.renderDocumentEditor();
-            }
-
-            copyDocumentId() {
-                if (this.currentDocument && this.currentDocument.id) {
-                    navigator.clipboard.writeText(this.currentDocument.id).then(() => {
-                        this.showStatus('Document ID copied to clipboard!', 'success');
-                    }).catch(() => {
-                        // Fallback for older browsers
-                        const textArea = document.createElement('textarea');
-                        textArea.value = this.currentDocument.id;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        this.showStatus('Document ID copied to clipboard!', 'success');
-                    });
-                }
-            }
-
-            detectFirebaseType(value) {
-                if (value === null || value === undefined) return 'null';
-                if (typeof value === 'boolean') return 'boolean';
-                if (typeof value === 'number') return 'number';
-                if (typeof value === 'string') {
-                    // Check if this field is defined as dropdown in template
-                    // We'll let the renderFormField method handle the dropdown logic
-                    return 'string';
-                }
-                if (Array.isArray(value)) return 'array';
-                if (value instanceof Date || (value && value.toDate)) return 'timestamp';
-                if (value && value.latitude !== undefined && value.longitude !== undefined) return 'geopoint';
-                if (value && value.path) return 'reference';
-                if (typeof value === 'object') return 'map';
-                return 'string';
             }
 
             renderFormField(key, value, fieldType) {
@@ -1470,6 +1429,29 @@
                 `;
             }
 
+            renderArrayItemInput(fieldKey, item, index, itemType) {
+                switch (itemType) {
+                    case 'boolean':
+                        return `<input type="checkbox" ${item ? 'checked' : ''} 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.checked)" 
+                                       class="rounded text-blue-600 focus:ring-blue-500">`;
+                    case 'number':
+                        return `<input type="number" step="any" value="${item || ''}" 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, parseFloat(this.value) || 0)" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">`;
+                    case 'object':
+                        return `<textarea rows="2" 
+                                          onchange="window.cmsApp.updateArrayItemFromJSON('${fieldKey}', ${index}, this.value)"
+                                          placeholder="Enter JSON object"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 font-mono text-sm">${JSON.stringify(item, null, 2)}</textarea>`;
+                    default: // string
+                        return `<input type="text" value="${item || ''}" 
+                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.value)" 
+                                       placeholder="Enter text..."
+                                       class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500">`;
+                }
+            }
+
             detectArrayItemType(item) {
                 if (typeof item === 'boolean') return 'boolean';
                 if (typeof item === 'number') return 'number';
@@ -1600,6 +1582,44 @@
                     this.documentForm[key] = { latitude: 0, longitude: 0 };
                 }
                 this.documentForm[key][coord] = value;
+            }
+
+            removeField(key) {
+                if (confirm(`Are you sure you want to remove the field "${key}"?`)) {
+                    delete this.documentForm[key];
+                    delete this.fieldTypes[key];
+
+                    if (this.originalDocumentFields.has(key)) {
+                        this.fieldsToDelete.add(key);
+                    }
+
+                    this.renderDocumentEditor();
+                }
+            }
+
+            addNewFieldWithType() {
+                const fieldName = document.getElementById('new-field-name').value.trim();
+                const fieldType = document.getElementById('new-field-type').value;
+
+                if (!fieldName) { this.showStatus('Please enter a field name', 'error'); return; }
+                if (this.documentForm.hasOwnProperty(fieldName)) { this.showStatus('Field already exists', 'error'); return; }
+
+                // Check if this field name matches a template field
+                const templateField = this.collectionTemplate?.find(f => f.name === fieldName);
+                if (templateField) {
+                    // Use template type and value instead
+                    this.documentForm[fieldName] = this.getDefaultValueForType(templateField.type);
+                    this.fieldTypes[fieldName] = templateField.type;
+                    this.showStatus(`Field "${fieldName}" added using template configuration (${templateField.type})`, 'info');
+                } else {
+                    // Create field with selected type
+                    this.documentForm[fieldName] = this.getDefaultValueForType(fieldType);
+                    this.fieldTypes[fieldName] = fieldType;
+                    this.showStatus(`Field "${fieldName}" added successfully!`);
+                }
+
+                this.fieldsToDelete.delete(fieldName);
+                this.renderDocumentEditor();
             }
 
             async saveDocument() {
@@ -1786,59 +1806,75 @@
                 document.getElementById('status-message').style.display = 'none';
             }
 
-            renderArrayItemInput(fieldKey, item, index, itemType) {
-                switch (itemType) {
-                    case 'boolean':
-                        return `<input type="checkbox" ${item ? 'checked' : ''} 
-                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.checked)" 
-                                       class="rounded text-blue-600 focus:ring-blue-500">`;
-                    case 'number':
-                        return `<input type="number" value="${item}" 
-                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, parseFloat(this.value) || 0)" 
-                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm">`;
-                    case 'object':
-                        return `<textarea rows="2" 
-                                         onchange="window.cmsApp.updateArrayItemFromJSON('${fieldKey}', ${index}, this.value)" 
-                                         class="w-full px-2 py-1 border border-gray-300 rounded text-sm font-mono">${JSON.stringify(item, null, 2)}</textarea>`;
-                    default: // string
-                        return `<input type="text" value="${item}" 
-                                       onchange="window.cmsApp.updateArrayItem('${fieldKey}', ${index}, this.value)" 
-                                       class="w-full px-2 py-1 border border-gray-300 rounded text-sm">`;
+            addDropdownOption(fieldIndex) {
+                const input = document.getElementById(`new-option-${fieldIndex}`);
+                const newOption = input.value.trim();
+
+                if (!newOption) {
+                    this.showStatus('Please enter an option value', 'error');
+                    return;
+                }
+
+                if (!this.templateFields[fieldIndex].options) {
+                    this.templateFields[fieldIndex].options = [];
+                }
+
+                // Check for duplicates
+                if (this.templateFields[fieldIndex].options.includes(newOption)) {
+                    this.showStatus('Option already exists', 'error');
+                    return;
+                }
+
+                this.templateFields[fieldIndex].options.push(newOption);
+                input.value = '';
+                this.renderTemplateFields();
+                this.showStatus(`Option "${newOption}" added!`);
+            }
+
+            removeDropdownOption(fieldIndex, optionIndex) {
+                if (this.templateFields[fieldIndex].options && optionIndex >= 0 && optionIndex < this.templateFields[fieldIndex].options.length) {
+                    const removedOption = this.templateFields[fieldIndex].options[optionIndex];
+                    this.templateFields[fieldIndex].options.splice(optionIndex, 1);
+                    this.renderTemplateFields();
+                    this.showStatus(`Option "${removedOption}" removed`);
                 }
             }
 
-            createNewDocument() {
-                this.currentDocument = null;
-                this.isNewDocument = true;
-                this.documentForm = {};
-                this.fieldTypes = {};
+            updateDropdownOption(fieldIndex, optionIndex, newValue) {
+                const trimmedValue = newValue.trim();
 
-                if (this.collectionTemplate && this.collectionTemplate.length > 0) {
-                    this.collectionTemplate.forEach(field => {
-                        this.documentForm[field.name] = this.getDefaultValueForType(field.type);
-                        // Always use template type for template fields
-                        this.fieldTypes[field.name] = field.type;
-                    });
+                if (!trimmedValue) {
+                    this.showStatus('Option value cannot be empty', 'error');
+                    this.renderTemplateFields(); // Reset the input
+                    return;
                 }
 
-                this.originalDocumentFields = new Set();
-                this.fieldsToDelete = new Set();
-                this.renderDocumentEditor();
+                // Check for duplicates (excluding the current option)
+                const currentOptions = this.templateFields[fieldIndex].options || [];
+                const isDuplicate = currentOptions.some((opt, idx) => idx !== optionIndex && opt === trimmedValue);
+
+                if (isDuplicate) {
+                    this.showStatus('Option already exists', 'error');
+                    this.renderTemplateFields(); // Reset the input
+                    return;
+                }
+
+                if (this.templateFields[fieldIndex].options) {
+                    this.templateFields[fieldIndex].options[optionIndex] = trimmedValue;
+                }
             }
 
-            getDefaultValueForType(type) {
-                switch (type) {
-                    case 'string': return '';
-                    case 'number': return 0;
-                    case 'boolean': return false;
-                    case 'dropdown': return '';
-                    case 'map': return {};
-                    case 'array': return [];
-                    case 'timestamp': return new Date();
-                    case 'geopoint': return { latitude: 0, longitude: 0 };
-                    case 'reference': return { path: '' };
-                    default: return '';
+            updateTemplateFieldType(index, type) {
+                this.templateFields[index].type = type;
+                // Initialize options array for dropdown type
+                if (type === 'dropdown' && !this.templateFields[index].options) {
+                    this.templateFields[index].options = [];
                 }
+                // Remove options if changing away from dropdown
+                if (type !== 'dropdown' && this.templateFields[index].options) {
+                    delete this.templateFields[index].options;
+                }
+                this.renderTemplateFields();
             }
         }
     </script>
