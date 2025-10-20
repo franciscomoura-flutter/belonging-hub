@@ -110,16 +110,8 @@
 
         <!-- Collections View -->
         <div id="collections-view" style="display: none;">
-            <div class="mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-semibold text-gray-900">Collections</h2>
-                    <span id="collections-count" class="text-sm text-gray-500"></span>
-                </div>
-                <div id="collections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-            </div>
-
             <!-- Add Collection -->
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Create New Collection</h3>
                 <div class="flex items-center space-x-3">
                     <input type="text" id="new-collection-name" placeholder="Collection name"
@@ -131,6 +123,15 @@
                     </button>
                 </div>
             </div>
+
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Collections</h2>
+                    <span id="collections-count" class="text-sm text-gray-500"></span>
+                </div>
+                <div id="collections-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
         </div>
 
         <!-- Collection View -->
@@ -153,6 +154,10 @@
                             class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
                             <i class="fas fa-plus mr-2"></i>Add Document
                         </button>
+                        <button onclick="window.cmsApp.showImportModal()"
+                            class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-file-import mr-2"></i>Import CSV
+                        </button>
                         <button onclick="window.cmsApp.showCollectionSettings()"
                             class="bg-purple-500 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors">
                             <i class="fas fa-cog mr-2"></i>Settings
@@ -173,6 +178,9 @@
                     </select>
                 </div>
             </div>
+
+            <!-- Batch Actions -->
+            <div id="batch-actions-container" style="display: none;"></div>
 
             <!-- Documents Table -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
@@ -296,6 +304,161 @@
                         class="bg-green-500 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
                         <i class="fas fa-save mr-2"></i>Save Template
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSV Import Modal -->
+        <div id="csv-import-modal"
+            class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4"
+            style="display: none;">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                <div class="flex items-center justify-between p-6 border-b">
+                    <h3 class="text-xl font-medium text-gray-900">Import CSV File</h3>
+                    <button onclick="window.cmsApp.hideImportModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="p-6 overflow-y-auto flex-1">
+                    <!-- Step 1: File Upload -->
+                    <div id="import-step-1" class="space-y-4">
+                        <h4 class="text-lg font-medium text-gray-900">Step 1: Select CSV File</h4>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                            <input type="file" id="csv-file-input" accept=".csv"
+                                onchange="window.cmsApp.handleCSVFile(event)" class="hidden">
+                            <button onclick="document.getElementById('csv-file-input').click()"
+                                class="bg-blue-500 hover:bg-blue-700 text-white px-6 py-3 rounded-lg">
+                                <i class="fas fa-upload mr-2"></i>Choose CSV File
+                            </button>
+                            <p class="mt-2 text-sm text-gray-500">
+                                Select a CSV file to import. First row should contain column headers.
+                            </p>
+                        </div>
+                        <div id="csv-file-info" class="hidden bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-file-csv text-green-500 mr-2"></i>
+                                <span id="csv-file-name" class="font-medium"></span>
+                                <span id="csv-file-size" class="ml-2 text-sm text-gray-500"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Field Mapping -->
+                    <div id="import-step-2" class="space-y-4" style="display: none;">
+                        <h4 class="text-lg font-medium text-gray-900">Step 2: Map CSV Columns to Template Fields</h4>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-info-circle text-blue-500 mr-2 mt-0.5"></i>
+                                <div class="text-sm text-blue-800">
+                                    <p>Map your CSV columns to collection template fields. Unmapped columns will be
+                                        ignored.</p>
+                                    <p class="mt-1">Fields marked with <span class="text-red-600">*</span> are required
+                                        template fields.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="csv-preview" class="border rounded-lg overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-2 border-b">
+                                <h5 class="font-medium text-gray-900">CSV Preview (first 3 rows)</h5>
+                            </div>
+                            <div id="csv-preview-content" class="p-4 overflow-x-auto"></div>
+                        </div>
+
+                        <div id="field-mapping" class="space-y-3">
+                            <h5 class="font-medium text-gray-900">Field Mapping</h5>
+                            <div id="field-mapping-list" class="space-y-2"></div>
+                        </div>
+
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-yellow-500 mr-2 mt-0.5"></i>
+                                <div class="text-sm text-yellow-800">
+                                    <p><strong>Import Notes:</strong></p>
+                                    <ul class="mt-1 list-disc list-inside space-y-1">
+                                        <li>Empty CSV cells will be saved as null values</li>
+                                        <li>Boolean fields: use "true/false", "yes/no", or "1/0"</li>
+                                        <li>Number fields: ensure valid numeric values</li>
+                                        <li>Timestamp fields: use ISO format (YYYY-MM-DDTHH:mm:ss) or standard date
+                                            formats</li>
+                                        <li>Array fields: use JSON array format ["item1", "item2"] or comma-separated
+                                            values</li>
+                                        <li>Map/Object fields: use valid JSON format</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Import Progress -->
+                    <div id="import-step-3" class="space-y-4" style="display: none;">
+                        <h4 class="text-lg font-medium text-gray-900">Step 3: Importing Data</h4>
+
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-blue-900">Import Progress</span>
+                                <span id="import-progress-text" class="text-sm text-blue-700">0 / 0</span>
+                            </div>
+                            <div class="w-full bg-blue-200 rounded-full h-2">
+                                <div id="import-progress-bar"
+                                    class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="import-status" class="space-y-2">
+                            <div class="text-sm text-gray-600">
+                                <div id="import-success-count" class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                    <span>Successfully imported: <span class="font-medium">0</span> documents</span>
+                                </div>
+                                <div id="import-error-count" class="flex items-center">
+                                    <i class="fas fa-exclamation-circle text-red-500 mr-2"></i>
+                                    <span>Errors: <span class="font-medium">0</span> documents</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="import-errors" class="hidden">
+                            <h5 class="font-medium text-red-900 mb-2">Import Errors:</h5>
+                            <div id="import-errors-list" class="space-y-1 max-h-40 overflow-y-auto"></div>
+                        </div>
+
+                        <div id="import-complete" class="hidden bg-green-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                <span class="text-green-800 font-medium">Import completed successfully!</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center border-t p-6">
+                    <button id="import-back-btn" onclick="window.cmsApp.importPreviousStep()"
+                        class="bg-gray-500 hover:bg-gray-700 text-white px-6 py-2 rounded-lg" style="display: none;">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </button>
+                    <div class="flex space-x-3 ml-auto">
+                        <button onclick="window.cmsApp.hideImportModal()"
+                            class="bg-gray-500 hover:bg-gray-700 text-white px-6 py-2 rounded-lg">
+                            Cancel
+                        </button>
+                        <button id="import-next-btn" onclick="window.cmsApp.importNextStep()"
+                            class="bg-blue-500 hover:bg-blue-700 text-white px-6 py-2 rounded-lg" disabled>
+                            Next <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                        <button id="import-start-btn" onclick="window.cmsApp.startImport()"
+                            class="bg-green-500 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+                            style="display: none;">
+                            <i class="fas fa-play mr-2"></i>Start Import
+                        </button>
+                        <button id="import-finish-btn" onclick="window.cmsApp.finishImport()"
+                            class="bg-blue-500 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+                            style="display: none;">
+                            <i class="fas fa-check mr-2"></i>Finish
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -511,6 +674,21 @@
                 this.collectionTemplate = null;
                 this.templateFields = [];
                 this.draggedFieldIndex = null;
+                this.csvData = null;
+                this.csvHeaders = [];
+                this.csvRows = [];
+                this.fieldMapping = {};
+                this.importStep = 1;
+                this.importProgress = {
+                    total: 0,
+                    current: 0,
+                    success: 0,
+                    errors: 0,
+                    errorDetails: []
+                };
+                // Batch selection properties
+                this.selectedDocuments = new Set();
+                this.showBatchActions = false;
             }
 
             async init() {
@@ -544,7 +722,10 @@
                                 count: count,
                                 totalDocs: collectionSnapshot.docs.length,
                                 createdAt: data.createdAt,
-                                template: data.template || null
+                                lastModified: data.lastModified || data.createdAt, // Use collection's lastModified or fallback to createdAt
+                                template: data.template || null,
+                                sortField: data.sortField || null,
+                                sortOrder: data.sortOrder || null
                             });
                         } catch (error) {
                             // Collection doesn't exist or access error - mark for removal
@@ -561,6 +742,9 @@
                             console.error(`Error cleaning up tracker entry ${collectionId}:`, error);
                         }
                     }
+
+                    // Sort collections alphabetically by name
+                    this.collections.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
                     this.renderCollections();
                 } catch (error) {
@@ -609,29 +793,50 @@
                     return;
                 }
 
-                grid.innerHTML = this.collections.map(coll => `
-                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border"
-                         onclick="window.cmsApp.selectCollection('${coll.id}')">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-database text-blue-500 text-2xl mr-3"></i>
-                                <h3 class="text-lg font-medium text-gray-900">${coll.name}</h3>
+                grid.innerHTML = this.collections.map(coll => {
+                    const lastModifiedDate = coll.lastModified ? new Date(coll.lastModified) : null;
+                    const createdDate = coll.createdAt ? new Date(coll.createdAt) : null;
+
+                    return `
+                        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border"
+                             onclick="window.cmsApp.selectCollection('${coll.id}')">
+                            <!-- Title and Count -->
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-database text-blue-500 text-2xl mr-3"></i>
+                                    <h3 class="text-lg font-medium text-gray-900">${coll.name}</h3>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    ${coll.template ? '<i class="fas fa-check-circle text-green-500" title="Template configured"></i>' : ''}
+                                    <span class="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                                        ${coll.count}
+                                    </span>
+                                </div>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                ${coll.template ? '<i class="fas fa-check-circle text-green-500" title="Template configured"></i>' : ''}
-                                <span class="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
-                                    ${coll.count}
-                                </span>
+                            
+                            <!-- Dates in one line -->
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                                ${createdDate ? `
+                                    <div class="flex items-center">
+                                        <span class="text-gray-400 mr-1">Created</span>
+                                        <span class="text-gray-600">${createdDate.toLocaleDateString()}</span>
+                                    </div>
+                                ` : '<div></div>'}
+                                ${lastModifiedDate ? `
+                                    <div class="flex items-center">
+                                        <span class="text-gray-400 mr-1">Last edited</span>
+                                        <span class="text-gray-600">${lastModifiedDate.toLocaleDateString()}</span>
+                                    </div>
+                                ` : '<div></div>'}
+                            </div>
+                            
+                            <!-- CTA -->
+                            <div class="flex justify-start">
+                                <span class="text-blue-600 text-sm font-medium">View Collection →</span>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-blue-600 text-sm font-medium">View Collection →</span>
-                            <span class="text-xs text-gray-400">
-                                ${coll.createdAt ? new Date(coll.createdAt).toLocaleDateString() : ''}
-                            </span>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
 
             async createCollection() {
@@ -680,8 +885,10 @@
 
                 this.currentCollection = collInfo;
                 this.collectionTemplate = collInfo.template;
-                this.currentSortField = null;
-                this.currentSortOrder = null;
+
+                // Load saved sort state from collection
+                this.currentSortField = collInfo.sortField || null;
+                this.currentSortOrder = collInfo.sortOrder || null;
 
                 document.getElementById('collections-view').style.display = 'none';
                 document.getElementById('loading-state').style.display = 'block';
@@ -713,6 +920,12 @@
 
                     this.availableFields = Array.from(allFields).sort();
                     this.filteredDocuments = [...this.documents];
+
+                    // Apply saved sorting if any
+                    if (this.currentSortField && this.currentSortOrder) {
+                        this.sortDocuments();
+                    }
+
                     this.renderCollection();
                 } catch (error) {
                     this.showStatus('Error loading documents: ' + error.message, 'error');
@@ -733,8 +946,13 @@
                     ${placeholderCount > 0 ? `<span class="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">${placeholderCount} placeholder${placeholderCount !== 1 ? 's' : ''}</span>` : ''}
                 `;
 
+                // Reset batch selection when rendering collection
+                this.selectedDocuments.clear();
+                this.showBatchActions = false;
+
                 this.renderSearchOptions();
                 this.renderTable();
+                this.renderBatchActions();
             }
 
             showCollectionSettings() {
@@ -972,6 +1190,13 @@
 
                 tableHead.innerHTML = `
                     <tr>
+                        <th class="px-6 py-3 text-left">
+                            <input type="checkbox" 
+                                   ${this.isAllSelected() ? 'checked' : ''} 
+                                   ${this.isIndeterminate() ? 'indeterminate' : ''}
+                                   onchange="window.cmsApp.toggleSelectAll(this.checked)"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                        </th>
                         ${displayFields.map(header => `
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sortable-header" 
                                 onclick="window.cmsApp.toggleSort('${header}')">
@@ -990,7 +1215,13 @@
                 const isLastDocument = this.filteredDocuments.length === 1;
 
                 tableBody.innerHTML = this.filteredDocuments.map(doc => `
-                    <tr class="hover:bg-gray-50 ${doc.isPlaceholder ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''}">
+                    <tr class="hover:bg-gray-50 ${doc.isPlaceholder ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''} ${this.selectedDocuments.has(doc.id) ? 'bg-blue-50' : ''}">
+                        <td class="px-6 py-4">
+                            <input type="checkbox" 
+                                   ${this.selectedDocuments.has(doc.id) ? 'checked' : ''}
+                                   onchange="window.cmsApp.toggleDocumentSelection('${doc.id}', this.checked)"
+                                   class="rounded text-blue-600 focus:ring-blue-500">
+                        </td>
                         ${displayFields.map(field => `
                             <td class="px-6 py-4 text-sm text-gray-900 table-cell-max">
                                 ${doc.isPlaceholder && field === displayFields[0] ?
@@ -1022,6 +1253,61 @@
                         </td>
                     </tr>
                 `).join('');
+
+                // Set indeterminate state for "select all" checkbox after rendering
+                const selectAllCheckbox = tableHead.querySelector('input[type="checkbox"]');
+                if (selectAllCheckbox && this.isIndeterminate()) {
+                    selectAllCheckbox.indeterminate = true;
+                }
+
+                this.renderBatchActions();
+            }
+
+            renderBatchActions() {
+                const batchActionsContainer = document.getElementById('batch-actions-container');
+
+                if (this.selectedDocuments.size > 0) {
+                    const selectedCount = this.selectedDocuments.size;
+                    const selectedDocs = Array.from(this.selectedDocuments);
+                    const hasPlaceholders = selectedDocs.some(docId => {
+                        const doc = this.documents.find(d => d.id === docId);
+                        return doc && doc.isPlaceholder;
+                    });
+
+                    batchActionsContainer.innerHTML = `
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-square text-blue-600 mr-2"></i>
+                                    <span class="text-blue-900 font-medium">
+                                        ${selectedCount} document${selectedCount !== 1 ? 's' : ''} selected
+                                    </span>
+                                    ${hasPlaceholders ? `
+                                        <span class="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                            Contains placeholder${selectedDocs.filter(docId => {
+                        const doc = this.documents.find(d => d.id === docId);
+                        return doc && doc.isPlaceholder;
+                    }).length > 1 ? 's' : ''}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <button onclick="window.cmsApp.clearSelection()"
+                                            class="text-gray-600 hover:text-gray-800 px-3 py-1 text-sm">
+                                        Clear Selection
+                                    </button>
+                                    <button onclick="window.cmsApp.batchDeleteDocuments()"
+                                            class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                        <i class="fas fa-trash mr-2"></i>Delete Selected
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    batchActionsContainer.style.display = 'block';
+                } else {
+                    batchActionsContainer.style.display = 'none';
+                }
             }
 
             getDisplayName(fieldName) {
@@ -1030,16 +1316,51 @@
                 return templateField ? templateField.displayName : fieldName;
             }
 
-            toggleSort(fieldName) {
+            async toggleSort(fieldName) {
                 if (this.currentSortField === fieldName) {
-                    if (this.currentSortOrder === 'asc') this.currentSortOrder = 'desc';
-                    else { this.currentSortField = null; this.currentSortOrder = null; }
+                    if (this.currentSortOrder === 'asc') {
+                        this.currentSortOrder = 'desc';
+                    } else {
+                        // Clear sorting
+                        this.currentSortField = null;
+                        this.currentSortOrder = null;
+                    }
                 } else {
                     this.currentSortField = fieldName;
                     this.currentSortOrder = 'asc';
                 }
+
+                // Save sort state to collection tracker
+                await this.saveSortState();
+
                 this.sortDocuments();
                 this.renderTable();
+            }
+
+            async saveSortState() {
+                try {
+                    const updateData = {
+                        sortField: this.currentSortField,
+                        sortOrder: this.currentSortOrder
+                    };
+
+                    await updateDoc(doc(db, CMS_CONFIG.trackerCollection, this.currentCollection.id), updateData);
+
+                    // Update local collection object
+                    this.currentCollection.sortField = this.currentSortField;
+                    this.currentCollection.sortOrder = this.currentSortOrder;
+
+                    // Also update in collections array
+                    const collIndex = this.collections.findIndex(c => c.id === this.currentCollection.id);
+                    if (collIndex !== -1) {
+                        this.collections[collIndex].sortField = this.currentSortField;
+                        this.collections[collIndex].sortOrder = this.currentSortOrder;
+                    }
+
+                } catch (error) {
+                    console.error('Error saving sort state:', error);
+                    // Don't show error to user as it's not critical
+                }
             }
 
             sortDocuments() {
@@ -1660,6 +1981,9 @@
                         this.showStatus('Document updated successfully!');
                     }
 
+                    // Update collection's lastModified timestamp
+                    await this.updateCollectionLastModified();
+
                     this.backToCollection();
                     await this.selectCollection(this.currentCollection.id);
                 } catch (error) {
@@ -1673,6 +1997,9 @@
                 try {
                     const docRef = doc(db, this.currentCollection.name, docId);
                     await deleteDoc(docRef);
+
+                    // Update collection's lastModified timestamp
+                    await this.updateCollectionLastModified();
 
                     // Check if this was the last document in the collection
                     const remainingDocs = this.documents.filter(d => d.id !== docId);
@@ -1751,6 +2078,9 @@
                     });
                 }
 
+                // Clear selection when filtering changes the visible documents
+                this.selectedDocuments.clear();
+
                 this.sortDocuments();
                 this.renderTable();
             }
@@ -1768,9 +2098,23 @@
             }
 
             async refreshView() {
+                // Clear current state
+                this.documents = [];
+                this.filteredDocuments = [];
+                this.availableFields = [];
+
+                // Show loading state
                 if (this.currentCollection) {
+                    document.getElementById('collection-view').style.display = 'none';
+                    document.getElementById('loading-state').style.display = 'block';
+
+                    // Reload the current collection completely
                     await this.selectCollection(this.currentCollection.id);
                 } else {
+                    document.getElementById('collections-view').style.display = 'none';
+                    document.getElementById('loading-state').style.display = 'block';
+
+                    // Reload collections completely
                     await this.loadCollections();
                 }
             }
@@ -1875,6 +2219,584 @@
                     delete this.templateFields[index].options;
                 }
                 this.renderTemplateFields();
+            }
+
+            showImportModal() {
+                this.resetImportState();
+                document.getElementById('csv-import-modal').style.display = 'flex';
+            }
+
+            hideImportModal() {
+                document.getElementById('csv-import-modal').style.display = 'none';
+                this.resetImportState();
+            }
+
+            resetImportState() {
+                this.csvData = null;
+                this.csvHeaders = [];
+                this.csvRows = [];
+                this.fieldMapping = {};
+                this.importStep = 1;
+                this.importProgress = {
+                    total: 0,
+                    current: 0,
+                    success: 0,
+                    errors: 0,
+                    errorDetails: []
+                };
+
+                // Reset UI
+                document.getElementById('import-step-1').style.display = 'block';
+                document.getElementById('import-step-2').style.display = 'none';
+                document.getElementById('import-step-3').style.display = 'none';
+                document.getElementById('import-back-btn').style.display = 'none';
+                document.getElementById('import-next-btn').style.display = 'inline-block';
+                document.getElementById('import-start-btn').style.display = 'none';
+                document.getElementById('import-finish-btn').style.display = 'none';
+                document.getElementById('import-next-btn').disabled = true;
+                document.getElementById('csv-file-info').classList.add('hidden');
+                document.getElementById('csv-file-input').value = '';
+            }
+
+            handleCSVFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                if (!file.name.toLowerCase().endsWith('.csv')) {
+                    this.showStatus('Please select a CSV file', 'error');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const csvText = e.target.result;
+                        this.parseCSV(csvText);
+
+                        // Show file info
+                        document.getElementById('csv-file-name').textContent = file.name;
+                        document.getElementById('csv-file-size').textContent = `(${this.formatFileSize(file.size)})`;
+                        document.getElementById('csv-file-info').classList.remove('hidden');
+                        document.getElementById('import-next-btn').disabled = false;
+
+                        this.showStatus(`CSV file loaded: ${this.csvRows.length} rows found`, 'success');
+                    } catch (error) {
+                        this.showStatus('Error reading CSV file: ' + error.message, 'error');
+                    }
+                };
+
+                reader.readAsText(file);
+            }
+
+            parseCSV(csvText) {
+                console.log('Raw CSV length:', csvText.length);
+
+                // Split into lines first
+                const lines = csvText.split(/\r?\n/).filter(line => line.trim());
+
+                if (lines.length < 2) {
+                    throw new Error('CSV file must have at least a header row and one data row');
+                }
+
+                console.log('Lines found:', lines.length);
+
+                // Parse each line
+                const allRows = lines.map(line => this.parseCSVLine(line));
+
+                // First row = headers
+                this.csvHeaders = allRows[0];
+
+                // Rest = data
+                this.csvRows = allRows.slice(1);
+
+                console.log('Headers:', this.csvHeaders);
+                console.log('Data rows:', this.csvRows.length);
+                console.log('Sample data:', this.csvRows.slice(0, 3));
+            }
+
+            parseCSVLine(line) {
+                const fields = [];
+                let currentField = '';
+                let insideQuotes = false;
+
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+
+                    if (char === '"') {
+                        insideQuotes = !insideQuotes;
+                    } else if (char === ',' && !insideQuotes) {
+                        // End of field - add it and start new one
+                        fields.push(currentField);
+                        currentField = '';
+                    } else {
+                        // Regular character - add to current field
+                        currentField += char;
+                    }
+                }
+
+                // Don't forget the last field
+                fields.push(currentField);
+
+                return fields;
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            importNextStep() {
+                if (this.importStep === 1) {
+                    this.showMappingStep();
+                }
+            }
+
+            importPreviousStep() {
+                if (this.importStep === 2) {
+                    this.importStep = 1;
+                    document.getElementById('import-step-1').style.display = 'block';
+                    document.getElementById('import-step-2').style.display = 'none';
+                    document.getElementById('import-back-btn').style.display = 'none';
+                    document.getElementById('import-next-btn').style.display = 'inline-block';
+                    document.getElementById('import-start-btn').style.display = 'none';
+                }
+            }
+
+            showMappingStep() {
+                this.importStep = 2;
+                document.getElementById('import-step-1').style.display = 'none';
+                document.getElementById('import-step-2').style.display = 'block';
+                document.getElementById('import-back-btn').style.display = 'inline-block';
+                document.getElementById('import-next-btn').style.display = 'none';
+                document.getElementById('import-start-btn').style.display = 'inline-block';
+
+                this.renderCSVPreview();
+                this.renderFieldMapping();
+            }
+
+            renderCSVPreview() {
+                const previewContainer = document.getElementById('csv-preview-content');
+                const previewRows = this.csvRows.slice(0, 3); // Show first 3 DATA rows (not including headers)
+
+                let html = '<table class="min-w-full text-sm">';
+
+                // Headers (clearly marked as headers)
+                html += '<thead class="bg-blue-100"><tr>';
+                this.csvHeaders.forEach(header => {
+                    html += `<th class="px-3 py-2 text-left font-medium text-blue-700 border">
+                                <i class="fas fa-tag text-xs mr-1"></i>${header}
+                            </th>`;
+                });
+                html += '</tr></thead>';
+
+                // Data rows (clearly marked as data)
+                html += '<tbody>';
+                previewRows.forEach((row, rowIndex) => {
+                    html += '<tr class="hover:bg-gray-50">';
+                    this.csvHeaders.forEach((header, colIndex) => {
+                        const cellValue = row[colIndex] || '';
+                        const displayValue = cellValue.length > 30 ? cellValue.substring(0, 30) + '...' : cellValue;
+                        html += `<td class="px-3 py-2 border text-gray-600" title="${cellValue}">${displayValue}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+
+                // Add info about what we're showing
+                html += `<div class="mt-2 text-xs text-gray-500">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Showing headers + first ${Math.min(3, this.csvRows.length)} data rows 
+                            (${this.csvRows.length} total data rows found)
+                        </div>`;
+
+                previewContainer.innerHTML = html;
+            }
+
+            renderFieldMapping() {
+                const mappingContainer = document.getElementById('field-mapping-list');
+
+                if (!this.collectionTemplate || this.collectionTemplate.length === 0) {
+                    mappingContainer.innerHTML = `
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+                                <span class="text-yellow-800">
+                                    No template fields defined for this collection. 
+                                    <button onclick="window.cmsApp.hideImportModal(); window.cmsApp.showCollectionSettings();" 
+                                            class="text-blue-600 underline ml-1">
+                                        Configure template first
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                this.collectionTemplate.forEach(templateField => {
+                    const mappingKey = `mapping-${templateField.name}`;
+                    const currentMapping = this.fieldMapping[templateField.name] || '';
+
+                    html += `
+                        <div class="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-48">
+                                <label class="block text-sm font-medium text-gray-700">
+                                    ${templateField.displayName} 
+                                    <span class="text-red-600">*</span>
+                                </label>
+                                <span class="text-xs text-gray-500">(${templateField.name} - ${templateField.type})</span>
+                            </div>
+                            <div class="flex-1">
+                                <select id="${mappingKey}" 
+                                        onchange="window.cmsApp.updateFieldMapping('${templateField.name}', this.value)"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Select CSV Column --</option>
+                                    ${this.csvHeaders.map(header => `
+                                        <option value="${header}" ${currentMapping === header ? 'selected' : ''}>
+                                            ${header}
+                                        </option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                mappingContainer.innerHTML = html;
+            }
+
+            updateFieldMapping(templateFieldName, csvHeader) {
+                if (csvHeader) {
+                    this.fieldMapping[templateFieldName] = csvHeader;
+                } else {
+                    delete this.fieldMapping[templateFieldName];
+                }
+            }
+
+            async startImport() {
+                // Validate that we have at least one field mapped
+                if (Object.keys(this.fieldMapping).length === 0) {
+                    this.showStatus('Please map at least one field before importing', 'error');
+                    return;
+                }
+
+                this.importStep = 3;
+                document.getElementById('import-step-2').style.display = 'none';
+                document.getElementById('import-step-3').style.display = 'block';
+                document.getElementById('import-back-btn').style.display = 'none';
+                document.getElementById('import-start-btn').style.display = 'none';
+
+                // Initialize progress
+                this.importProgress.total = this.csvRows.length;
+                this.importProgress.current = 0;
+                this.importProgress.success = 0;
+                this.importProgress.errors = 0;
+                this.importProgress.errorDetails = [];
+
+                this.updateImportProgress();
+
+                // Start importing
+                await this.processImport();
+            }
+
+            async processImport() {
+                const batchSize = 10; // Process in batches to avoid overwhelming Firestore
+
+                for (let i = 0; i < this.csvRows.length; i += batchSize) {
+                    const batch = this.csvRows.slice(i, i + batchSize);
+
+                    await Promise.all(batch.map(async (row, batchIndex) => {
+                        const rowIndex = i + batchIndex;
+                        try {
+                            const documentData = this.parseRowToDocument(row);
+                            if (documentData && Object.keys(documentData).length > 0) {
+                                await addDoc(collection(db, this.currentCollection.name), documentData);
+                                this.importProgress.success++;
+                            } else {
+                                throw new Error('No valid data found in row');
+                            }
+                        } catch (error) {
+                            this.importProgress.errors++;
+                            this.importProgress.errorDetails.push({
+                                row: rowIndex + 1,
+                                error: error.message
+                            });
+                        }
+
+                        this.importProgress.current++;
+                        this.updateImportProgress();
+                    }));
+
+                    // Small delay between batches to prevent rate limiting
+                    if (i + batchSize < this.csvRows.length) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+
+                // Update collection's lastModified timestamp after import
+                await this.updateCollectionLastModified();
+
+                this.completeImport();
+            }
+
+            parseRowToDocument(row) {
+                const documentData = {};
+                let hasData = false;
+
+                Object.entries(this.fieldMapping).forEach(([templateFieldName, csvHeader]) => {
+                    const csvColumnIndex = this.csvHeaders.indexOf(csvHeader);
+                    if (csvColumnIndex >= 0) {
+                        const cellValue = row[csvColumnIndex]?.trim() || '';
+
+                        if (cellValue) {
+                            const templateField = this.collectionTemplate.find(f => f.name === templateFieldName);
+                            const parsedValue = this.parseCellValue(cellValue, templateField.type);
+                            if (parsedValue !== null) {
+                                documentData[templateFieldName] = parsedValue;
+                                hasData = true;
+                            }
+                        }
+                    }
+                });
+
+                return hasData ? documentData : null;
+            }
+
+            parseCellValue(cellValue, fieldType) {
+                if (!cellValue || cellValue.toLowerCase() === 'null') {
+                    return null;
+                }
+
+                try {
+                    switch (fieldType) {
+                        case 'string':
+                        case 'dropdown':
+                            return cellValue;
+
+                        case 'number':
+                            const num = parseFloat(cellValue);
+                            if (isNaN(num)) throw new Error(`Invalid number: ${cellValue}`);
+                            return num;
+
+                        case 'boolean':
+                            const lowerValue = cellValue.toLowerCase();
+                            if (['true', 'yes', '1'].includes(lowerValue)) return true;
+                            if (['false', 'no', '0'].includes(lowerValue)) return false;
+                            throw new Error(`Invalid boolean: ${cellValue}`);
+
+                        case 'timestamp':
+                            const date = new Date(cellValue);
+                            if (isNaN(date.getTime())) throw new Error(`Invalid date: ${cellValue}`);
+                            return Timestamp.fromDate(date);
+
+                        case 'array':
+                            // Try JSON first, then comma-separated
+                            if (cellValue.startsWith('[') && cellValue.endsWith(']')) {
+                                return JSON.parse(cellValue);
+                            } else {
+                                return cellValue.split(',').map(item => item.trim()).filter(item => item);
+                            }
+
+                        case 'map':
+                            return JSON.parse(cellValue);
+
+                        case 'geopoint':
+                            // Expect "lat,lng" format
+                            const coords = cellValue.split(',').map(coord => parseFloat(coord.trim()));
+                            if (coords.length !== 2 || coords.some(isNaN)) {
+                                throw new Error(`Invalid geopoint: ${cellValue}`);
+                            }
+                            return new GeoPoint(coords[0], coords[1]);
+
+                        case 'reference':
+                            return { path: cellValue };
+
+                        default:
+                            return cellValue;
+                    }
+                } catch (error) {
+                    throw new Error(`Error parsing ${fieldType}: ${error.message}`);
+                }
+            }
+
+            updateImportProgress() {
+                const percentage = this.importProgress.total > 0 ?
+                    (this.importProgress.current / this.importProgress.total) * 100 : 0;
+
+                document.getElementById('import-progress-bar').style.width = `${percentage}%`;
+                document.getElementById('import-progress-text').textContent =
+                    `${this.importProgress.current} / ${this.importProgress.total}`;
+
+                document.querySelector('#import-success-count span.font-medium').textContent =
+                    this.importProgress.success;
+                document.querySelector('#import-error-count span.font-medium').textContent =
+                    this.importProgress.errors;
+
+                // Show errors if any
+                if (this.importProgress.errors > 0) {
+                    document.getElementById('import-errors').classList.remove('hidden');
+                    const errorsList = document.getElementById('import-errors-list');
+                    errorsList.innerHTML = this.importProgress.errorDetails.map(error =>
+                        `<div class="text-sm text-red-700">Row ${error.row}: ${error.error}</div>`
+                    ).join('');
+                }
+            }
+
+            completeImport() {
+                document.getElementById('import-complete').classList.remove('hidden');
+                document.getElementById('import-finish-btn').style.display = 'inline-block';
+
+                this.showStatus(
+                    `Import completed! ${this.importProgress.success} documents imported successfully.`,
+                    this.importProgress.errors > 0 ? 'info' : 'success'
+                );
+            }
+
+            async finishImport() {
+                this.hideImportModal();
+                // Refresh the collection view to show imported documents
+                await this.selectCollection(this.currentCollection.id);
+            }
+
+            async updateCollectionLastModified() {
+                try {
+                    await updateDoc(doc(db, CMS_CONFIG.trackerCollection, this.currentCollection.id), {
+                        lastModified: new Date().toISOString()
+                    });
+
+                    // Update local collection object
+                    this.currentCollection.lastModified = new Date().toISOString();
+
+                    // Also update in collections array
+                    const collIndex = this.collections.findIndex(c => c.id === this.currentCollection.id);
+                    if (collIndex !== -1) {
+                        this.collections[collIndex].lastModified = this.currentCollection.lastModified;
+                    }
+                } catch (error) {
+                    console.error('Error updating collection lastModified:', error);
+                    // Don't show error to user as it's not critical
+                }
+            }
+
+            toggleDocumentSelection(docId, isSelected) {
+                if (isSelected) {
+                    this.selectedDocuments.add(docId);
+                } else {
+                    this.selectedDocuments.delete(docId);
+                }
+                this.renderTable();
+            }
+
+            toggleSelectAll(selectAll) {
+                if (selectAll) {
+                    // Select all non-placeholder documents
+                    this.filteredDocuments.forEach(doc => {
+                        this.selectedDocuments.add(doc.id);
+                    });
+                } else {
+                    // Deselect all
+                    this.selectedDocuments.clear();
+                }
+                this.renderTable();
+            }
+
+            isAllSelected() {
+                if (this.filteredDocuments.length === 0) return false;
+                return this.filteredDocuments.every(doc => this.selectedDocuments.has(doc.id));
+            }
+
+            isIndeterminate() {
+                const selectedCount = this.selectedDocuments.size;
+                return selectedCount > 0 && selectedCount < this.filteredDocuments.length;
+            }
+
+            clearSelection() {
+                this.selectedDocuments.clear();
+                this.renderTable();
+            }
+
+            async batchDeleteDocuments() {
+                const selectedCount = this.selectedDocuments.size;
+                const selectedIds = Array.from(this.selectedDocuments);
+
+                if (selectedCount === 0) return;
+
+                // Check if we're deleting all documents
+                const totalDocuments = this.documents.length;
+                const willDeleteCollection = selectedCount === totalDocuments;
+
+                let confirmMessage = `Are you sure you want to delete ${selectedCount} document${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`;
+
+                if (willDeleteCollection) {
+                    confirmMessage = `You are about to delete all documents in the collection "${this.currentCollection.name}". This will also remove the entire collection from the CMS.\n\nAre you sure you want to proceed?`;
+                }
+
+                if (!confirm(confirmMessage)) return;
+
+                try {
+                    let successCount = 0;
+                    let errorCount = 0;
+                    const errors = [];
+
+                    // Show progress for large batches
+                    if (selectedCount > 5) {
+                        this.showStatus(`Deleting ${selectedCount} documents...`, 'info');
+                    }
+
+                    // Delete documents in smaller batches to avoid overwhelming Firestore
+                    const batchSize = 5;
+                    for (let i = 0; i < selectedIds.length; i += batchSize) {
+                        const batch = selectedIds.slice(i, i + batchSize);
+
+                        await Promise.all(batch.map(async (docId) => {
+                            try {
+                                const docRef = doc(db, this.currentCollection.name, docId);
+                                await deleteDoc(docRef);
+                                successCount++;
+                            } catch (error) {
+                                errorCount++;
+                                errors.push(`${docId}: ${error.message}`);
+                            }
+                        }));
+
+                        // Small delay between batches
+                        if (i + batchSize < selectedIds.length) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+                    }
+
+                    // Update collection's lastModified timestamp
+                    await this.updateCollectionLastModified();
+
+                    // Clear selection
+                    this.selectedDocuments.clear();
+
+                    if (willDeleteCollection && successCount === totalDocuments) {
+                        // All documents were deleted - collection will be auto-removed
+                        await this.removeCollectionFromTracker();
+                        this.showStatus('All documents deleted. Collection has been removed.', 'success');
+                        this.backToCollections();
+                        await this.loadCollections();
+                    } else {
+                        // Show results
+                        if (errorCount === 0) {
+                            this.showStatus(`Successfully deleted ${successCount} document${successCount !== 1 ? 's' : ''}!`, 'success');
+                        } else {
+                            this.showStatus(`Deleted ${successCount} documents. ${errorCount} failed.`, 'info');
+                            console.error('Batch delete errors:', errors);
+                        }
+
+                        // Refresh the collection view
+                        await this.selectCollection(this.currentCollection.id);
+                    }
+
+                } catch (error) {
+                    this.showStatus('Error during batch delete: ' + error.message, 'error');
+                }
             }
         }
     </script>
