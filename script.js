@@ -289,6 +289,97 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function initAppLogic() {
+        // Initialize Firebase first for video loading
+        initFirebaseForHomeVideos().then(() => {
+            // Load videos from Firestore before setting up video logic
+            loadHomeVideos().then(() => {
+                setupVideoLogic();
+            });
+        });
+
+        // Initialize Journey tabs
+        initJourneyTabs();
+
+        // Add click logic for home sub-cards to open journey tabs
+        const subCards = document.querySelectorAll('.section-explore-sub-card');
+        subCards.forEach((card, idx) => {
+            card.addEventListener('click', () => {
+                showMain('journey');
+                // Wait for journey tabs to be initialized
+                setTimeout(() => {
+                    const tablist = document.getElementById('journeyTabs');
+                    if (!tablist) return;
+                    const tabs = tablist.querySelectorAll('[role="tab"]');
+                    if (tabs[idx]) {
+                        tabs[idx].click();
+                        tabs[idx].focus();
+                    }
+                }, 100); // slight delay to ensure DOM update
+            });
+        });
+    }
+
+    function initFirebaseForHomeVideos() {
+        return new Promise((resolve) => {
+            // Initialize Firebase if not already initialized
+            if (!window.firebase || !firebase.apps.length) {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyB289BJeYvnPOxkZcM38Z_ftaNU4SPcjXY",
+                    authDomain: "belonginghub.firebaseapp.com",
+                    projectId: "belonginghub",
+                    storageBucket: "belonginghub.firebasestorage.app",
+                    messagingSenderId: "341033605727",
+                    appId: "1:341033605727:web:e33608fb0166248e4759ea"
+                };
+                firebase.initializeApp(firebaseConfig);
+            }
+            resolve();
+        });
+    }
+
+    function loadHomeVideos() {
+        return new Promise((resolve, reject) => {
+            const db = firebase.firestore();
+
+            db.collection('HomeVideos').get()
+                .then((querySnapshot) => {
+                    const videos = {};
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.section && data.url) {
+                            videos[data.section] = data.url;
+                        }
+                    });
+
+                    // Update hero video source
+                    if (videos.Hero) {
+                        const heroVideo = document.querySelector('.hero-video video');
+                        const heroSource = heroVideo.querySelector('source');
+                        if (heroSource) {
+                            heroSource.src = videos.Hero;
+                        }
+                    }
+
+                    // Update explore video source
+                    if (videos.Explore) {
+                        const exploreVideo = document.getElementById('exploreMainVideo');
+                        const exploreSource = exploreVideo.querySelector('source');
+                        if (exploreSource) {
+                            exploreSource.src = videos.Explore;
+                        }
+                    }
+
+                    resolve();
+                })
+                .catch((error) => {
+                    console.error('Error loading home videos from Firestore:', error);
+                    // Continue with existing hardcoded videos if Firestore fails
+                    resolve();
+                });
+        });
+    }
+
+    function setupVideoLogic() {
         // HERO VIDEO SETUP (autoplay only)
         const heroVideoContainer = document.querySelector('.hero-video');
         const heroVideo = heroVideoContainer.querySelector('video');
@@ -406,27 +497,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
         }
-
-        // Initialize Journey tabs
-        initJourneyTabs();
-
-        // Add click logic for home sub-cards to open journey tabs
-        const subCards = document.querySelectorAll('.section-explore-sub-card');
-        subCards.forEach((card, idx) => {
-            card.addEventListener('click', () => {
-                showMain('journey');
-                // Wait for journey tabs to be initialized
-                setTimeout(() => {
-                    const tablist = document.getElementById('journeyTabs');
-                    if (!tablist) return;
-                    const tabs = tablist.querySelectorAll('[role="tab"]');
-                    if (tabs[idx]) {
-                        tabs[idx].click();
-                        tabs[idx].focus();
-                    }
-                }, 100); // slight delay to ensure DOM update
-            });
-        });
     }
 });
 
